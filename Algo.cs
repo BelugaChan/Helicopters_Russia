@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace MinHash
 {
-    public class Algo
+    public class Algo : ISimilarityCalculator
     {
         IExcelWriter excelWriter = new EPPlusWriter();
         private int k; //shingle length

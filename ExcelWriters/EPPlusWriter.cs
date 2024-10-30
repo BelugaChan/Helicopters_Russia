@@ -1,12 +1,7 @@
 ﻿using MinHash.Interfaces;
 using OfficeOpenXml;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace MinHash
+namespace MinHash.ExcelWriters
 {
     public class EPPlusWriter : IExcelWriter
     {
@@ -17,7 +12,7 @@ namespace MinHash
 
             var sheet = package.Workbook.Worksheets.Add("Data Report");
 
-            sheet.Cells[2,1,2,3].LoadFromArrays(new object[][] { new[] { "Best", "Mid", "Bad" } });
+            sheet.Cells[2, 1, 2, 3].LoadFromArrays(new object[][] { new[] { "Best", "Mid", "Bad" } });
             var column = 1;
             var row = 3;
             foreach (var item in high)
@@ -38,7 +33,7 @@ namespace MinHash
                 row++;
             }
 
-            File.WriteAllBytes(savePath,package.GetAsByteArray());
+            File.WriteAllBytes(savePath, package.GetAsByteArray());
         }
     }
 }
