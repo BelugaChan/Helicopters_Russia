@@ -6,8 +6,7 @@ ISimilarityCalculator similarityCalculator = new Algo();
 ```
 *Создание экземпляра EPPlusReader для считывания данных из Excel файлов*
 ```
-IExcelReader reader = new EPPlusReader();
-ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+IExcelReader reader = new NPOIReader();
 ```
 *Пути к исходным файлам*
 ```
@@ -26,4 +25,12 @@ string savePath = @"some_path_to_report";
 *Подсчёт коэффициентов и запись в результата работы алгоритма в новый Excel файл*
 ```
 similarityCalculator.CalculateCoefficent(standarts, garbageData, savePath);
+```
+
+## Объединение Excel-файлов
+```
+ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
+IExcelMerger excelMerger = new NPOIMerger();
+excelMerger.MergeExcelFiles(new List<string>() { "path_to_standarts_1",
+"path_to_standarts_1"}, "path_to_result_file", "result_fileName");
 ```
