@@ -1,4 +1,5 @@
-﻿using MinHash.ExcelWriters;
+﻿using MinHash.ExcelReaders;
+using MinHash.ExcelWriters;
 using MinHash.Interfaces;
 using System.Text.RegularExpressions;
 
@@ -6,7 +7,7 @@ namespace MinHash
 {
     public class Algo : ISimilarityCalculator
     {
-        IExcelWriter excelWriter = new EPPlusWriter();
+        IExcelWriter excelWriter = new NPOIWriter();
         private int k; //shingle length
         private int hashFuncCount;
         private string savePath; //путь сохранения отчёта

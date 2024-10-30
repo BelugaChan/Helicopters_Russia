@@ -34,6 +34,7 @@ namespace MinHash.ExcelWriters
             }
 
             File.WriteAllBytes(savePath, package.GetAsByteArray());
+            package.Dispose();
         }
     }
 }

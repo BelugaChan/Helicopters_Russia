@@ -15,8 +15,8 @@ namespace MinHash.ExcelReaders
 
             for (int row = 2; row < rowCount; row++)
             {
-                var obj = factory.CreateFromRow(worksheet, row);
-                objects.Add(obj);
+                //var obj = factory.CreateFromRow(worksheet, row);
+                //objects.Add(obj);
             }
             return objects;
         }
