@@ -4,9 +4,16 @@ namespace MinHash
 {
     public class Algo
     {
-        private static int k = 2; //shingle length
-        private static int hashFuncCount = 20;
-        public static int[] MinHashFunction(string str) //функция подсчёта минимального хэша для каждого шингла в строке
+        private int k; //shingle length
+        private int hashFuncCount;
+
+        public Algo(int k = 2, int hashFuncCount = 20)
+        {
+            this.k = k;
+            this.hashFuncCount = hashFuncCount;
+        }
+
+        public int[] MinHashFunction(string str) //функция подсчёта минимального хэша для каждого шингла в строке
         {
             int[] signatures = new int[hashFuncCount];
 
@@ -28,7 +35,7 @@ namespace MinHash
             return signatures;
         }
 
-        public static HashSet<string> GetShingles(string str) //функция получения шинглов у строки
+        public HashSet<string> GetShingles(string str) //функция получения шинглов у строки
         {
             var fixedStr = Regex.Replace(str, @"[^а-яА-Я0-9\s]", "").ToLower(); //удаление посторонних символов, кроме цифр, пробелов и букв
             var tokens = fixedStr.Split(' ', StringSplitOptions.RemoveEmptyEntries); //преобразование строки в массив токенов
@@ -42,13 +49,13 @@ namespace MinHash
             return shingles;
         }
 
-        public static int GenerateHashFunc(string value, int seed) //функция создания хэша для отдельного шингла
+        public int GenerateHashFunc(string value, int seed) //функция создания хэша для отдельного шингла
         {
             int hash = Math.Abs((value.GetHashCode() * seed + 170) % 2147483647);
             return hash;
         }
 
-        public static double JaccardSimilarity(int[] s1, int[] s2) //функция подсчёта коэффициента Жаккарда
+        public double JaccardSimilarity(int[] s1, int[] s2) //функция подсчёта коэффициента Жаккарда
         {
             HashSet<int> set1 = new HashSet<int>(s1);
             HashSet<int> set2 = new HashSet<int>(s2);
