@@ -1,16 +1,21 @@
-﻿using System.Text.RegularExpressions;
+﻿using MinHash.ExcelWriters;
+using MinHash.Interfaces;
+using System.Text.RegularExpressions;
 
 namespace MinHash
 {
     public class Algo
     {
+        IExcelWriter excelWriter = new EPPlusWriter();
         private int k; //shingle length
         private int hashFuncCount;
+        private string savePath; //путь сохранения отчёта
 
-        public Algo(int k = 2, int hashFuncCount = 20)
+        public Algo(int k = 2, int hashFuncCount = 20, string savePath = "Report.xlsx")
         {
             this.k = k;
             this.hashFuncCount = hashFuncCount;
+            this.savePath = savePath;
         }
 
         public int[] MinHashFunction(string str) //функция подсчёта минимального хэша для каждого шингла в строке
@@ -61,6 +66,42 @@ namespace MinHash
             HashSet<int> set2 = new HashSet<int>(s2);
             int intersectCount = set1.Intersect(set2).Count();
             return (double)intersectCount / (set1.Count + set2.Count - intersectCount);
+        }
+
+        public void CalculateCoefficent<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData) //функция получения трёх коллекций с данными
+            where TStandart : IStandart
+            where TGarbageData : IGarbageData
+        {
+            var worst = new HashSet<TGarbageData>();
+            var mid = new HashSet<TGarbageData>();
+            var best = new HashSet<TGarbageData>();
+
+            Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();
+            foreach (var item in standarts)
+            {
+                standartSignatures.Add(item, MinHashFunction(item.Name));
+            }
+
+            for (int i = 0; i < garbageData.Count; i++)
+            {
+                double bestValue = -1;
+                var garbageSignature = MinHashFunction(garbageData[i].ShortName);
+                foreach (var (standart, signature) in standartSignatures)
+                {
+                    var jaccardSimilarity = JaccardSimilarity(signature, garbageSignature);
+                    if (jaccardSimilarity > bestValue)
+                    {
+                        bestValue = jaccardSimilarity;
+                    }
+                }
+                if (bestValue == 0)
+                    worst.Add(garbageData[i]);
+                else if (bestValue < 0.3)
+                    mid.Add(garbageData[i]);
+                else
+                    best.Add(garbageData[i]);                
+            }
+            excelWriter.WriteCollectionsToExcel(worst, mid, best, savePath); //функция записи коллекций в Excel файл
         }
     }
 }
