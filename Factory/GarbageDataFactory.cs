@@ -1,9 +1,8 @@
-﻿using MinHash.Interfaces;
-using MinHash.Models;
+﻿using Abstractions.Interfaces;
+using Algo.Models;
 using NPOI.SS.UserModel;
-using OfficeOpenXml;
 
-namespace MinHash.Factory
+namespace Algo.Factory
 {
     public class GarbageDataFactory : IEntityFactory<GarbageData>
     {

@@ -1,6 +1,6 @@
-﻿using MinHash.Interfaces;
+﻿using Abstractions.Interfaces;
 
-namespace MinHash.Models
+namespace Algo.Models
 {
     public class GarbageData : IGarbageData
     {

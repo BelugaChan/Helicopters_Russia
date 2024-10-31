@@ -1,22 +1,18 @@
-﻿using MinHash.ExcelReaders;
-using MinHash.ExcelWriters;
-using MinHash.Interfaces;
+﻿using Abstractions.Interfaces;
+using Algo.Interfaces;
 using System.Text.RegularExpressions;
 
-namespace MinHash
+namespace Algo.Algotithms
 {
-    public class Algo : ISimilarityCalculator
+    public class MinHashAlgo : ISimilarityCalculator
     {
-        IExcelWriter excelWriter = new NPOIWriter();
         private int k; //shingle length
         private int hashFuncCount;
-        private string savePath; //путь сохранения отчёта
 
-        public Algo(int k = 2, int hashFuncCount = 20, string savePath = "Report.xlsx")
+        public MinHashAlgo(int k = 2, int hashFuncCount = 20)
         {
             this.k = k;
             this.hashFuncCount = hashFuncCount;
-            this.savePath = savePath;
         }
 
         public int[] MinHashFunction(string str) //функция подсчёта минимального хэша для каждого шингла в строке
@@ -69,13 +65,14 @@ namespace MinHash
             return (double)intersectCount / (set1.Count + set2.Count - intersectCount);
         }
 
-        public void CalculateCoefficent<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData) //функция получения трёх коллекций с данными
+        public void CalculateCoefficent<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData,
+            out HashSet<TGarbageData> worst, out HashSet<TGarbageData> mid, out HashSet<TGarbageData> best) //функция получения трёх коллекций с данными
             where TStandart : IStandart
             where TGarbageData : IGarbageData
         {
-            var worst = new HashSet<TGarbageData>();
-            var mid = new HashSet<TGarbageData>();
-            var best = new HashSet<TGarbageData>();
+            worst = new HashSet<TGarbageData>();
+            mid = new HashSet<TGarbageData>();
+            best = new HashSet<TGarbageData>();
 
             Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();
             foreach (var item in standarts)
@@ -100,9 +97,8 @@ namespace MinHash
                 else if (bestValue < 0.3)
                     mid.Add(garbageData[i]);
                 else
-                    best.Add(garbageData[i]);                
+                    best.Add(garbageData[i]);
             }
-            excelWriter.WriteCollectionsToExcel(worst, mid, best, savePath); //функция записи коллекций в Excel файл
         }
     }
 }

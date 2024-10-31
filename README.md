@@ -1,12 +1,21 @@
-## Взаимодействие с MinHash
+## Взаимодействие с Библиотекой классов Algo 
+**Для корректной работы библиотеки необходимо установить NuGet пакет NPOI и подключить ссылки на dll через
+dependencies -> Add Project Reference. 
+Список необходимых библиотек:
++ Algo(основной алгоритм)
++ ExcelHandler(работа с xlsx файлами)
++ Abstractions(интерфейсы)**
+Данные библиотеки находятся в папке DLL
 
 *Создание экземпляра класса MinHash. Интерфейс был добавлен для возможной реализации иных алгоритмов сравнения*
 ```
-ISimilarityCalculator similarityCalculator = new Algo();
+ISimilarityCalculator similarityCalculator = new MinHash();
 ```
-*Создание экземпляра EPPlusReader для считывания данных из Excel файлов*
+*Создание экземпляра IExcelReader для считывания данных из Excel файлов
+и IExcelWriter для записи данных в Excel фалйы*
 ```
 IExcelReader reader = new NPOIReader();
+IExcelWriter excelWriter = new NPOIWriter();
 ```
 *Пути к исходным файлам*
 ```
@@ -24,12 +33,14 @@ string savePath = @"some_path_to_report";
 ```
 *Подсчёт коэффициентов и запись в результата работы алгоритма в новый Excel файл*
 ```
-similarityCalculator.CalculateCoefficent(standarts, garbageData, savePath);
+similarityCalculator.CalculateCoefficent(standarts, garbageData, out HashSet<GarbageData> worst, out HashSet<GarbageData> mid, out HashSet<GarbageData> best);
 ```
-
+*Запись данных в отчёт*
+```
+excelWriter.WriteCollectionsToExcel(worst, mid, best, savePath);
+```
 ## Объединение Excel-файлов
 ```
-ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
 IExcelMerger excelMerger = new NPOIMerger();
 excelMerger.MergeExcelFiles(new List<string>() { "path_to_standarts_1",
 "path_to_standarts_1"}, "path_to_result_file", "result_fileName");
