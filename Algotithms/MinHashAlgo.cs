@@ -1,5 +1,6 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Interfaces;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace Algo.Algotithms
@@ -8,7 +9,8 @@ namespace Algo.Algotithms
     {
         private int k; //shingle length
         private int hashFuncCount;
-
+        private int totalGarbageDataItems = 0;
+        private int currentProgress = 0;
         public MinHashAlgo(int k = 2, int hashFuncCount = 20)
         {
             this.k = k;
@@ -74,16 +76,23 @@ namespace Algo.Algotithms
             mid = new HashSet<TGarbageData>();
             best = new HashSet<TGarbageData>();
 
+            totalGarbageDataItems = garbageData.Count;
+            int processedItems = 0;
+
             Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();
             foreach (var item in standarts)
             {
                 standartSignatures.Add(item, MinHashFunction(item.Name));
             }
 
-            for (int i = 0; i < garbageData.Count; i++)
+            ConcurrentBag<TGarbageData> worstBag = new ConcurrentBag<TGarbageData>();
+            ConcurrentBag<TGarbageData> midBag = new ConcurrentBag<TGarbageData>();
+            ConcurrentBag<TGarbageData> bestBag = new ConcurrentBag<TGarbageData>();
+
+            Parallel.ForEach(garbageData, garbageItem =>
             {
                 double bestValue = -1;
-                var garbageSignature = MinHashFunction(garbageData[i].ShortName);
+                var garbageSignature = MinHashFunction(garbageItem.ShortName);
                 foreach (var (standart, signature) in standartSignatures)
                 {
                     var jaccardSimilarity = JaccardSimilarity(signature, garbageSignature);
@@ -92,13 +101,35 @@ namespace Algo.Algotithms
                         bestValue = jaccardSimilarity;
                     }
                 }
+
                 if (bestValue == 0)
-                    worst.Add(garbageData[i]);
+                    worstBag.Add(garbageItem);
                 else if (bestValue < 0.3)
-                    mid.Add(garbageData[i]);
+                    midBag.Add(garbageItem);
                 else
-                    best.Add(garbageData[i]);
+                    bestBag.Add(garbageItem);
+
+                currentProgress = Interlocked.Increment(ref processedItems);
+
+            });
+
+            foreach (var item in worstBag)
+            {
+                worst.Add(item);
             }
+            foreach (var item in midBag)
+            {
+                mid.Add(item);
+            }
+            foreach (var item in bestBag)
+            {
+                best.Add(item);
+            }
+        }
+
+        public double GetProgress()
+        {
+            return (double)currentProgress * 100 / totalGarbageDataItems;
         }
     }
 }
