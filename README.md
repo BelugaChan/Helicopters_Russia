@@ -41,6 +41,10 @@ similarityCalculator.CalculateCoefficent(standarts, garbageData, out HashSet<Gar
 ```
 excelWriter.WriteCollectionsToExcel(worst, mid, best, savePath);
 ```
+*Получение процента выполнения алгоритма*
+```
+double progress = similarityCalculator.GetProgress();
+```
 ## Объединение Excel-файлов
 ```
 IExcelMerger excelMerger = new NPOIMerger();
