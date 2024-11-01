@@ -8,5 +8,7 @@ namespace Algo.Interfaces
             out HashSet<TGarbageData> worst, out HashSet<TGarbageData> mid, out HashSet<TGarbageData> best)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
+
+        double GetProgress();
     }
 }
