@@ -1,6 +1,12 @@
 ## Взаимодействие с Библиотекой классов Algo 
 **Для корректной работы библиотеки необходимо установить NuGet пакет NPOI и подключить ссылки на dll через
-dependencies -> Add Project Reference. Необходимо подключить следующие библиотеки: Algo**
+dependencies -> Add Project Reference. 
+Список необходимых библиотек:
++ Algo(основной алгоритм)
++ ExcelHandler(работа с xlsx файлами)
++ Abstractions(интерфейсы)**
+Данные библиотеки находятся в папке DLL
+
 *Создание экземпляра класса MinHash. Интерфейс был добавлен для возможной реализации иных алгоритмов сравнения*
 ```
 ISimilarityCalculator similarityCalculator = new MinHash();
