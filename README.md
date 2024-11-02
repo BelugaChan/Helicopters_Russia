@@ -24,30 +24,39 @@ IExcelWriter excelWriter = new NPOIWriter();
 string combinedFilePath = @"some_path_to_combined_standard_file";
 string garbageFilePath = @"some_path_to_garbage_data_file";
 ```
-*Получение коллекций*
+*Инициализация переменных*
 ```
-var standarts = reader.CreateCollectionFromExcel(combinedFilePath, new StandartFactory());
-var garbageData = reader.CreateCollectionFromExcel(garbageFilePath, new GarbageDataFactory());
+List<Standart> standarts = new List<Standart>();
+List<GarbageData> garbageData = new List<GarbageData>();
+```
+*Получение коллекций с выделением для них отдельного потока*
+```
+await Task.Run(() => 
+{
+    standarts = reader.CreateCollectionFromExcel(combinedFilePath, new StandartFactory());
+    garbageData = reader.CreateCollectionFromExcel(garbageFilePath, new GarbageDataFactory());
+});
+```
+*Подсчёт коэффициентов идентичности*
+```
+var (worst, mid, best) = await Task.Run(() =>
+    similarityCalculator.CalculateCoefficent(standarts, garbageData));
 ```
 *Путь для сохранения отчёта*
 ```
 string savePath = @"some_path_to_report";
 ```
-*Подсчёт коэффициентов и запись в результата работы алгоритма в новый Excel файл*
-```
-similarityCalculator.CalculateCoefficent(standarts, garbageData, out HashSet<GarbageData> worst, out HashSet<GarbageData> mid, out HashSet<GarbageData> best);
-```
 *Запись данных в отчёт*
 ```
-excelWriter.WriteCollectionsToExcel(worst, mid, best, savePath);
+await writer.WriteCollectionsToExcelAsync(worst, mid, best, savePath);
 ```
-*Получение процента выполнения алгоритма*
+*Получение процента выполнения алгоритма (на стадии тестирования)*
 ```
 double progress = similarityCalculator.GetProgress();
 ```
 ## Объединение Excel-файлов
 ```
 IExcelMerger excelMerger = new NPOIMerger();
-excelMerger.MergeExcelFiles(new List<string>() { "path_to_standarts_1",
+await excelMerger.MergeExcelFilesAsync(new List<string>() { "path_to_standarts_1",
 "path_to_standarts_1"}, "path_to_result_file", "result_fileName");
 ```

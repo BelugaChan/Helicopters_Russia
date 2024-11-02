@@ -67,19 +67,20 @@ namespace Algo.Algotithms
             return (double)intersectCount / (set1.Count + set2.Count - intersectCount);
         }
 
-        public void CalculateCoefficent<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData,
-            out HashSet<TGarbageData> worst, out HashSet<TGarbageData> mid, out HashSet<TGarbageData> best) //функция получения трёх коллекций с данными
+        public (HashSet<TGarbageData> worst, HashSet<TGarbageData> mid, HashSet<TGarbageData> best) CalculateCoefficent<TStandart, TGarbageData>(
+            List<TStandart> standarts,
+            List<TGarbageData> garbageData) //функция получения трёх коллекций с данными
             where TStandart : IStandart
             where TGarbageData : IGarbageData
         {
-            worst = new HashSet<TGarbageData>();
-            mid = new HashSet<TGarbageData>();
-            best = new HashSet<TGarbageData>();
+            var worst = new HashSet<TGarbageData>();
+            var mid = new HashSet<TGarbageData>();
+            var best = new HashSet<TGarbageData>();
 
             totalGarbageDataItems = garbageData.Count;
             int processedItems = 0;
 
-            Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();
+            Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();//сигнатуры для эталонных позиций
             foreach (var item in standarts)
             {
                 standartSignatures.Add(item, MinHashFunction(item.Name));
@@ -90,7 +91,7 @@ namespace Algo.Algotithms
             ConcurrentBag<TGarbageData> midBag = new ConcurrentBag<TGarbageData>();
             ConcurrentBag<TGarbageData> bestBag = new ConcurrentBag<TGarbageData>();
 
-            Parallel.ForEach(garbageData, garbageItem =>
+            Parallel.ForEach(garbageData, (garbageItem, state) =>
             {
                 double bestValue = -1;
                 var garbageSignature = MinHashFunction(garbageItem.ShortName);
@@ -110,8 +111,12 @@ namespace Algo.Algotithms
                 else
                     bestBag.Add(garbageItem);
 
-                currentProgress = Interlocked.Increment(ref processedItems);
-
+                currentProgress = Interlocked.Increment(ref processedItems);//индексатор текущего прогресса работы алгоритма
+                //завершение циклом выполняющихся операций при достижении индексатора в 300 единиц
+                //if (currentProgress == 300)
+                //{
+                //    state.Stop();
+                //}
             });
 
             // Переносим элементы из ConcurrentBag в обычные HashSet
@@ -127,9 +132,11 @@ namespace Algo.Algotithms
             {
                 best.Add(item);
             }
+
+            return (worst, mid, best);
         }
 
-        public double GetProgress()
+        public double GetProgress() //alpha testing
         {
             return (double)currentProgress * 100 / totalGarbageDataItems;
         }

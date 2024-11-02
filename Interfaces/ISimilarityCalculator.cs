@@ -4,8 +4,9 @@ namespace Algo.Interfaces
 {
     public interface ISimilarityCalculator
     {
-        void CalculateCoefficent<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData,
-            out HashSet<TGarbageData> worst, out HashSet<TGarbageData> mid, out HashSet<TGarbageData> best)
+        (HashSet<TGarbageData> worst, HashSet<TGarbageData> mid, HashSet<TGarbageData> best)/*выходные параметры*/ CalculateCoefficent<TStandart, TGarbageData>
+            (List<TStandart> standarts,//входные параметры
+            List<TGarbageData> garbageData)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
 
