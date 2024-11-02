@@ -34,24 +34,25 @@ public class FileProcessingService
 
     private async Task<string> RunProcessingAlgorithm(string dirtyFilePath, string cleanFilePath)
     {
+        List<Standart> standarts = new List<Standart>();
+        List<GarbageData> garbageData = new List<GarbageData>();
+
         // Считываем данные из "чистого" и "грязного" файлов
-        var standarts = _excelReader.CreateCollectionFromExcel(cleanFilePath, new StandartFactory());
-        var garbageData = _excelReader.CreateCollectionFromExcel(dirtyFilePath, new GarbageDataFactory());
+        await Task.Run(() => //выделение отдельного потока для функций CreateCollectionFromExcel. Основной поток может выполнять другие действия, пока не завершится считывание файлов
+            {
+                standarts = _excelReader.CreateCollectionFromExcel(cleanFilePath, new StandartFactory());//need to merge clean files
+                garbageData = _excelReader.CreateCollectionFromExcel(dirtyFilePath, new GarbageDataFactory());
+            });
 
         // Вычисляем коэффициенты схожести и разделяем на категории
-        _similarityCalculator.CalculateCoefficent(
-            standarts,
-            garbageData,
-            out HashSet<GarbageData> worst,
-            out HashSet<GarbageData> mid,
-            out HashSet<GarbageData> best
-        );
+        var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
+            _similarityCalculator.CalculateCoefficent(standarts, garbageData));
 
         // Создаём путь для сохранения результата
         var resultFilePath = Path.Combine("Data", "Result.xlsx");
 
         // Записываем результаты в Excel
-        _excelWriter.WriteCollectionsToExcel(worst, mid, best, resultFilePath);
+        await _excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);
 
         return resultFilePath;
     }
