@@ -1,23 +1,43 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Interfaces;
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace Algo.Algotithms
 {
     public class MinHashAlgo : ISimilarityCalculator
     {
-        private int k; //shingle length
         private int hashFuncCount;
         private int totalGarbageDataItems = 0;
         private int currentProgress = 0;
-        public MinHashAlgo(int k = 2, int hashFuncCount = 20)
+
+        private static HashSet<string> stopWords = new HashSet<string> { "СТ", "НА", "И", "ИЗ", "С", "СОДЕРЖ", "ТОЧН", "КЛ", "ШГ", "МЕХОБР", "КАЧ", "Х/Т", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КАЛИБР", "ХОЛ", "ПР", "ПРУЖ", "АВИАЦ", "КОНСТР", "КОНСТРУКЦ", "ПРЕЦИЗ", "СПЛ", "ПРЕСС", "КА4", "ОТВЕТСТВ", "НАЗНА4", "ОЦИНК", "НИК", "БЕЗНИКЕЛ", "ЛЕГИР", "АВТОМАТ", "Г/К", "КОРРОЗИННОСТОЙК", "Н/УГЛЕР", "ПРЕСС", "АЛЮМИН", "СПЛАВОВ" };
+
+        private static Dictionary<string, string> replacements = new Dictionary<string, string>
         {
-            this.k = k;
+            { "А","A" },
+            { "В","B" },
+            { "Е","E" },
+            { "К", "K" },
+            { "М", "M" },
+            { "Н", "H" },
+            { "О", "O" },
+            { "Р", "P" },
+            { "С", "C" },
+            { "Т", "T" },
+            { "У", "Y" },
+            { "Х", "X" },
+            { "OCT1","OCT 1" }
+        };
+
+        public MinHashAlgo(int hashFuncCount = 20)
+        {
             this.hashFuncCount = hashFuncCount;
         }
 
-        public int[] MinHashFunction(string str) //функция подсчёта минимального хэша для каждого шингла в строке
+        public int[] MinHashFunction(string str)
         {
             int[] signatures = new int[hashFuncCount];
 
@@ -39,27 +59,42 @@ namespace Algo.Algotithms
             return signatures;
         }
 
-        public HashSet<string> GetShingles(string str) //функция получения шинглов у строки
+        public HashSet<string> GetShingles(string str)
         {
-            var fixedStr = Regex.Replace(str, @"[^а-яА-Я0-9\s]", "").ToLower(); //удаление посторонних символов, кроме цифр, пробелов и букв
-            var tokens = fixedStr.Split(' ', StringSplitOptions.RemoveEmptyEntries); //преобразование строки в массив токенов
-            var shingles = new HashSet<string>();
-
-            for (int i = 0; i <= tokens.Length - k; i++)
+            var fixedStr = str.ToUpper().Replace("\"", "").Replace("\r", "").Replace("\t", "").Replace("\n", "");
+            fixedStr = fixedStr.TrimEnd(',');
+            foreach (var pair in replacements)
             {
-                string shingle = string.Join(" ", tokens.Skip(i).Take(k));
-                shingles.Add(shingle);
+                fixedStr = fixedStr.Replace(pair.Key, pair.Value);
+            }
+            var tokens = fixedStr.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
+            var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
+            HashSet<string> shingles = new HashSet<string>();
+
+            List<int> shingleLengths = new List<int> { 1, 2};
+
+            foreach (var k in shingleLengths)
+            {
+                for (int i = 0; i <= filteredTokens.Count - k; i++)
+                {
+                    shingles.Add(string.Join(" ", filteredTokens.Skip(i).Take(k)));
+                }
             }
             return shingles;
         }
 
-        public int GenerateHashFunc(string value, int seed) //функция создания хэша для отдельного шингла
+        public int GenerateHashFunc(string value, int seed)
         {
-            int hash = Math.Abs((value.GetHashCode() * seed + 170) % 2147483647);
-            return hash;
+            using (var sha256 = SHA256.Create())
+            {
+                var inputBytes = Encoding.UTF8.GetBytes(value + seed.ToString());
+                var hashBytes = sha256.ComputeHash(inputBytes);
+                int hash = BitConverter.ToInt32(hashBytes, 0);
+                return Math.Abs(hash);
+            }     
         }
 
-        public double JaccardSimilarity(int[] s1, int[] s2) //функция подсчёта коэффициента Жаккарда
+        public double JaccardSimilarity(int[] s1, int[] s2)
         {
             HashSet<int> set1 = new HashSet<int>(s1);
             HashSet<int> set2 = new HashSet<int>(s2);
@@ -80,7 +115,7 @@ namespace Algo.Algotithms
             totalGarbageDataItems = garbageData.Count;
             int processedItems = 0;
 
-            Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();//сигнатуры для эталонных позиций
+            Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();
             foreach (var item in standarts)
             {
                 standartSignatures.Add(item, MinHashFunction(item.Name));
@@ -91,7 +126,12 @@ namespace Algo.Algotithms
             ConcurrentBag<TGarbageData> midBag = new ConcurrentBag<TGarbageData>();
             ConcurrentBag<TGarbageData> bestBag = new ConcurrentBag<TGarbageData>();
 
-            Parallel.ForEach(garbageData, (garbageItem, state) =>
+            var parallelOptions = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount // Ограничение на количество потоков
+            };
+
+            Parallel.ForEach(garbageData, parallelOptions, (garbageItem, state) =>
             {
                 double bestValue = -1;
                 var garbageSignature = MinHashFunction(garbageItem.ShortName);
@@ -103,23 +143,19 @@ namespace Algo.Algotithms
                         bestValue = jaccardSimilarity;
                     }
                 }
-
-                if (bestValue == 0)
+                if (bestValue < 0.05)
                     worstBag.Add(garbageItem);
-                else if (bestValue < 0.3)
+                else if (bestValue < 0.6)
                     midBag.Add(garbageItem);
                 else
                     bestBag.Add(garbageItem);
-
-                currentProgress = Interlocked.Increment(ref processedItems);//индексатор текущего прогресса работы алгоритма
-                //завершение циклом выполняющихся операций при достижении индексатора в 300 единиц
-                //if (currentProgress == 300)
+                currentProgress = Interlocked.Increment(ref processedItems);
+                //if (currentProgress % 10 == 0)
                 //{
-                //    state.Stop();
+                //    Console.WriteLine($"текущий прогресс: {currentProgress} | наилучшее сопоставление (> 0.95), ед.: {bestBag.Count} | среднее сопоставление, ед: {midBag.Count}");
                 //}
             });
 
-            // Переносим элементы из ConcurrentBag в обычные HashSet
             foreach (var item in worstBag)
             {
                 worst.Add(item);
@@ -132,7 +168,6 @@ namespace Algo.Algotithms
             {
                 best.Add(item);
             }
-
             return (worst, mid, best);
         }
 
