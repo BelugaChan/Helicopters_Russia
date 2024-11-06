@@ -37,7 +37,7 @@ await Task.Run(() =>
     garbageData = reader.CreateCollectionFromExcel(garbageFilePath, new GarbageDataFactory());
 });
 ```
-*Подсчёт коэффициентов идентичности*
+*Подсчёт коэффициентов идентичности двух массивов данных*
 ```
 var (worst, mid, best) = await Task.Run(() =>
     similarityCalculator.CalculateCoefficent(standarts, garbageData));
