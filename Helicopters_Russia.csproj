@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Download data\" />
     <Folder Include="Data\" />
   </ItemGroup>
 </Project>
