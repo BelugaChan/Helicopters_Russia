@@ -205,7 +205,102 @@ namespace Helicopters_Russia.Services
 
         private async Task StartProccessingFiles(CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
+            var chatId = callbackQuery.Message.Chat.Id;
 
+            if (_userStates[chatId] != UserState.Idle)
+                return;
+
+            _logger.LogInformation($"Запуск обработки файлов для пользователя {callbackQuery.From.Username}");
+
+            try
+            {
+                // Указываем пути к объединенным файлам
+                var dirtyFilePath = Path.Combine("Data", "Грязные данные.xlsx");
+                var cleanFilePath = Path.Combine("Data", "Чистые данные.xlsx");
+
+                // Проверка существования файлов
+                if (!System.IO.File.Exists(dirtyFilePath) || !System.IO.File.Exists(cleanFilePath))
+                {
+                    await _botClient.SendTextMessageAsync(chatId, "Не удалось найти загруженные файлы для обработки.", cancellationToken: cancellationToken);
+                    return;
+                }
+
+                // Установка путей файлов в сервис обработки
+                _fileProcessingService.SaveDirtyFilePath(dirtyFilePath);
+                _fileProcessingService.SaveCleanFilePath(cleanFilePath);
+
+                // Запуск обработки файлов
+                var resultFilePath = await _fileProcessingService.ProcessFilesAsync(cancellationToken);
+
+                _logger.LogInformation("Файлы обработаны, отправляем результат пользователю");
+
+                // Проверка размера файла и выбор способа отправки
+                var fileInfo = new FileInfo(resultFilePath);
+                if (fileInfo.Length > 49 * 1024 * 1024)
+                {
+                    // Если файл слишком большой, разбить и отправить по частям
+                    await SplitAndSendLargeFileAsync(resultFilePath, chatId, cancellationToken);
+                }
+                else
+                {
+                    // Отправить файл целиком
+                    await using var resultStream = System.IO.File.OpenRead(resultFilePath);
+                    var inputFile = new InputFileStream(resultStream, "Result.xlsx");
+                    await _botClient.SendDocumentAsync(chatId, inputFile, cancellationToken: cancellationToken);
+                }
+
+                // Очистка состояния и сброс данных для следующей операции
+                _userStates[chatId] = UserState.Idle;
+                _userDirtyFiles.Remove(chatId);
+                _userCleanFiles.Remove(chatId);
+
+                _logger.LogInformation($"Файл с результатом отправлен пользователю {chatId}");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Ошибка при обработке файлов: {ex.Message}");
+                await _botClient.SendTextMessageAsync(
+                    chatId,
+                    "Произошла ошибка при обработке файлов. Пожалуйста, попробуйте снова.",
+                    cancellationToken: cancellationToken
+                );
+            }
+        }
+
+        private async Task SplitAndSendLargeFileAsync(string filePath, long chatId, CancellationToken cancellationToken)
+        {
+            const long maxFileSize = 49 * 1024 * 1024; // 49MB
+            int partNumber = 1;
+            using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
+
+            // Пока файл не полностью отправлен
+            while (fileStream.Position < fileStream.Length)
+            {
+                var partPath = $"Data/Result_Part{partNumber}.xlsx";
+
+                // Создайте новую часть файла, пока она не достигнет лимита
+                using var partStream = new FileStream(partPath, FileMode.Create, FileAccess.Write);
+
+                int bytesRead;
+                byte[] buffer = new byte[1024 * 1024]; // Буфер 1 МБ
+                long partSize = 0;
+
+                while ((bytesRead = await fileStream.ReadAsync(buffer, cancellationToken)) > 0 && partSize < maxFileSize)
+                {
+                    await partStream.WriteAsync(buffer.AsMemory(0, bytesRead), cancellationToken);
+                    partSize += bytesRead;
+                }
+
+                // Отправка текущей части пользователю
+                await using var sendStream = new FileStream(partPath, FileMode.Open, FileAccess.Read);
+                await _botClient.SendDocumentAsync(
+                    chatId: chatId,
+                    document: new InputFileStream(sendStream, $"Result_Part{partNumber}.xlsx"),
+                    cancellationToken: cancellationToken
+                );
+
+                partNumber++;
+            }
         }
 
         private async Task MergeFilesAsync(IEnumerable<string> filePaths, string outputFilePath, string resultFileName, CancellationToken cancellationToken)
