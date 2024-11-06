@@ -1,5 +1,6 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Interfaces;
+using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
@@ -115,11 +116,12 @@ namespace Algo.Algotithms
             totalGarbageDataItems = garbageData.Count;
             int processedItems = 0;
 
-            Dictionary<TStandart, int[]> standartSignatures = new Dictionary<TStandart, int[]>();
-            foreach (var item in standarts)
+            ConcurrentDictionary<TStandart, int[]> standartSignatures = new ConcurrentDictionary<TStandart, int[]>();
+            Parallel.ForEach(standarts, item =>
             {
-                standartSignatures.Add(item, MinHashFunction(item.Name));
-            }
+                var signature = MinHashFunction(item.Name);
+                standartSignatures[item] = signature;
+            });
 
             // используем ConcurrentBag для безопасной работы с коллекциями из нескольких потоков
             ConcurrentBag<TGarbageData> worstBag = new ConcurrentBag<TGarbageData>();
