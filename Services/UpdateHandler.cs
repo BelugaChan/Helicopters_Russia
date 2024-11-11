@@ -96,6 +96,13 @@ namespace Helicopters_Russia.Services
             var fileId = document.FileId;
             var fileName = document.FileName ?? "UnnamedFile"; // используем имя файла, если оно есть
             var filePath = Path.Combine("Download data", document.FileName);
+
+            string directoryPath = "/app/Download data/";
+            if (!Directory.Exists(directoryPath)) 
+            { 
+                Directory.CreateDirectory(directoryPath); 
+            }
+
             var file = await botClient.GetFileAsync(document.FileId, cancellationToken);
 
             _logger.LogInformation($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\"\n");
@@ -214,6 +221,11 @@ namespace Helicopters_Russia.Services
 
             try
             {
+                //string directoryPath = "/app/Data/";
+                //if (!Directory.Exists(directoryPath))
+                //{
+                //    Directory.CreateDirectory(directoryPath);
+                //}
                 // Указываем пути к объединенным файлам
                 var dirtyFilePath = Path.Combine("Data", "Грязные данные.xlsx");
                 var cleanFilePath = Path.Combine("Data", "Чистые данные.xlsx");
@@ -307,6 +319,12 @@ namespace Helicopters_Russia.Services
         {
             try
             {
+                string directoryPath = "/app/Data/";
+                if (!Directory.Exists(directoryPath))
+                {
+                    Directory.CreateDirectory(directoryPath);
+                }
+
                 // Используем IExcelMerger для объединения файлов
                 IExcelMerger excelMerger = new NPOIMerger(); // Здесь можно внедрить через DI, если нужно.
 
