@@ -8,12 +8,12 @@ public class FileProcessingService
     private readonly ISimilarityCalculator _similarityCalculator;
     private readonly IExcelReader _excelReader;
     private readonly IExcelWriter _excelWriter;
-    private readonly ILogger _logger;
+    private readonly ILogger<FileProcessingService> _logger;
 
     private string? _dirtyFilePath;
     private string? _cleanFilePath;
 
-    public FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger logger)
+    public FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger<FileProcessingService> logger)
     {
         _similarityCalculator = similarityCalculator;
         _excelReader = excelReader;
