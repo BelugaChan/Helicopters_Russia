@@ -5,10 +5,20 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Helicopters_Russia-96138eec-65f4-4616-b341-851d60db0345</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Download data\**" />
+    <Content Remove="Download data\**" />
+    <EmbeddedResource Remove="Download data\**" />
+    <None Remove="Download data\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
     <PackageReference Include="NPOI" Version="2.7.1" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />
   </ItemGroup>
@@ -26,7 +36,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Download data\" />
     <Folder Include="Data\" />
   </ItemGroup>
 </Project>
