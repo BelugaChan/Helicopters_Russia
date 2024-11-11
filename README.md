@@ -11,7 +11,7 @@ __ __
 
 *Создание экземпляра класса MinHash. Интерфейс был добавлен для возможной реализации иных алгоритмов сравнения*
 ```
-ISimilarityCalculator similarityCalculator = new MinHash();
+ISimilarityCalculator similarityCalculator = new MinHash(); // или new CosineSimAlgo()
 ```
 *Создание экземпляра IExcelReader для считывания данных из Excel файлов
 и IExcelWriter для записи данных в Excel фалйы*

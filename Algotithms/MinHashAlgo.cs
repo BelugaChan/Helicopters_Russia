@@ -1,4 +1,5 @@
 ﻿using Abstractions.Interfaces;
+using Algo.Abstract;
 using Algo.Interfaces;
 using System;
 using System.Collections.Concurrent;
@@ -8,31 +9,10 @@ using System.Text.RegularExpressions;
 
 namespace Algo.Algotithms
 {
-    public class MinHashAlgo : ISimilarityCalculator
+    public class MinHashAlgo : SimilarityCalculator
     {
         private int hashFuncCount;
-        private int totalGarbageDataItems = 0;
-        private int currentProgress = 0;
-
-        private static HashSet<string> stopWords = new HashSet<string> { "СТ", "НА", "И", "ИЗ", "С", "СОДЕРЖ", "ТОЧН", "КЛ", "ШГ", "МЕХОБР", "КАЧ", "Х/Т", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КАЛИБР", "ХОЛ", "ПР", "ПРУЖ", "АВИАЦ", "КОНСТР", "КОНСТРУКЦ", "ПРЕЦИЗ", "СПЛ", "ПРЕСС", "КА4", "ОТВЕТСТВ", "НАЗНА4", "ОЦИНК", "НИК", "БЕЗНИКЕЛ", "ЛЕГИР", "АВТОМАТ", "Г/К", "КОРРОЗИННОСТОЙК", "Н/УГЛЕР", "ПРЕСС", "АЛЮМИН", "СПЛАВОВ" };
-
-        private static Dictionary<string, string> replacements = new Dictionary<string, string>
-        {
-            { "А","A" },
-            { "В","B" },
-            { "Е","E" },
-            { "К", "K" },
-            { "М", "M" },
-            { "Н", "H" },
-            { "О", "O" },
-            { "Р", "P" },
-            { "С", "C" },
-            { "Т", "T" },
-            { "У", "Y" },
-            { "Х", "X" },
-            { "OCT1","OCT 1" }
-        };
-
+        
         public MinHashAlgo(int hashFuncCount = 20)
         {
             this.hashFuncCount = hashFuncCount;
@@ -62,17 +42,22 @@ namespace Algo.Algotithms
 
         public HashSet<string> GetShingles(string str)
         {
-            var fixedStr = str.ToUpper().Replace("\"", "").Replace("\r", "").Replace("\t", "").Replace("\n", "");
-            fixedStr = fixedStr.TrimEnd(',');
+            var fixedStr = str.ToUpper();
+            string result = Regex.Replace(fixedStr, pattern, " ");
             foreach (var pair in replacements)
             {
-                fixedStr = fixedStr.Replace(pair.Key, pair.Value);
+                result = result.Replace(pair.Key, pair.Value);
             }
-            var tokens = fixedStr.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
+            result = result.TrimEnd('.');
+            var tokens = result.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
             var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
+            if ("AEЁИOYЭЫЯ".IndexOf(filteredTokens[0][filteredTokens[0].Length - 1]) >= 0)
+            {
+                filteredTokens[0] = filteredTokens[0].Substring(0, filteredTokens[0].Length - 1);
+            }
             HashSet<string> shingles = new HashSet<string>();
 
-            List<int> shingleLengths = new List<int> { 1, 2};
+            List<int> shingleLengths = new List<int> { 1/*, 2*//*, 3 */};
 
             foreach (var k in shingleLengths)
             {
@@ -86,13 +71,10 @@ namespace Algo.Algotithms
 
         public int GenerateHashFunc(string value, int seed)
         {
-            using (var sha256 = SHA256.Create())
-            {
-                var inputBytes = Encoding.UTF8.GetBytes(value + seed.ToString());
-                var hashBytes = sha256.ComputeHash(inputBytes);
-                int hash = BitConverter.ToInt32(hashBytes, 0);
-                return Math.Abs(hash);
-            }     
+            var inputBytes = Encoding.UTF8.GetBytes(value + seed.ToString());
+            var hashBytes = MD5.HashData(inputBytes);
+            int hash = BitConverter.ToInt32(hashBytes, 0);
+            return Math.Abs(hash);
         }
 
         public double JaccardSimilarity(int[] s1, int[] s2)
@@ -103,11 +85,9 @@ namespace Algo.Algotithms
             return (double)intersectCount / (set1.Count + set2.Count - intersectCount);
         }
 
-        public (HashSet<TGarbageData> worst, HashSet<TGarbageData> mid, HashSet<TGarbageData> best) CalculateCoefficent<TStandart, TGarbageData>(
-            List<TStandart> standarts,
+        public override (HashSet<TGarbageData> worst, HashSet<TGarbageData> mid, HashSet<TGarbageData> best) CalculateCoefficent<TStandart, TGarbageData>
+            (List<TStandart> standarts,
             List<TGarbageData> garbageData) //функция получения трёх коллекций с данными
-            where TStandart : IStandart
-            where TGarbageData : IGarbageData
         {
             var worst = new HashSet<TGarbageData>();
             var mid = new HashSet<TGarbageData>();
@@ -128,10 +108,10 @@ namespace Algo.Algotithms
             ConcurrentBag<TGarbageData> midBag = new ConcurrentBag<TGarbageData>();
             ConcurrentBag<TGarbageData> bestBag = new ConcurrentBag<TGarbageData>();
 
-            var parallelOptions = new ParallelOptions
-            {
-                MaxDegreeOfParallelism = Environment.ProcessorCount // Ограничение на количество потоков
-            };
+            //var parallelOptions = new ParallelOptions
+            //{
+            //    MaxDegreeOfParallelism = Environment.ProcessorCount // Ограничение на количество потоков
+            //};
 
             Parallel.ForEach(garbageData, parallelOptions, (garbageItem, state) =>
             {
@@ -147,7 +127,7 @@ namespace Algo.Algotithms
                 }
                 if (bestValue < 0.05)
                     worstBag.Add(garbageItem);
-                else if (bestValue < 0.6)
+                else if (bestValue < 0.9)
                     midBag.Add(garbageItem);
                 else
                     bestBag.Add(garbageItem);
@@ -171,11 +151,6 @@ namespace Algo.Algotithms
                 best.Add(item);
             }
             return (worst, mid, best);
-        }
-
-        public double GetProgress() //alpha testing
-        {
-            return (double)currentProgress * 100 / totalGarbageDataItems;
         }
     }
 }
