@@ -30,7 +30,7 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<FileProcessingService>();
             builder.Services.AddSingleton<UpdateHandler>();
             builder.Services.AddHostedService<BotService>();
-            builder.Services.AddSingleton<ISimilarityCalculator, MinHashAlgo>();
+            builder.Services.AddSingleton<ISimilarityCalculator, CosineSimAlgo>();
             builder.Services.AddSingleton<IExcelReader, NPOIReader>();
             builder.Services.AddSingleton<IExcelWriter, NPOIWriter>();
             builder.Services.AddSingleton<FileProcessingService>();
