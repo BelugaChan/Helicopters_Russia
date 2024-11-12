@@ -32,7 +32,7 @@ RUN dotnet restore
 
 # Копируем остальные файлы и выполняем публикацию
 COPY . .
-RUN dotnet publish -c Release -o /app/publish --no-restore -v q --disable-build-integrity-checks
+RUN dotnet publish -c Release -o /app/publish --no-warn
 
 
 # Стадия исполнения
