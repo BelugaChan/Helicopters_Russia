@@ -5,9 +5,9 @@ meta:
     name: dotnet
     version: 8.0
 build:
-  image: helicoptersrussia:dev
+  image: b3lugach4n/heli-demo:latest
 run:
   persistenceMount: /data
   containerPort: 80
   buildFileName: publish/Helicopters_Russia
-  image: helicoptersrussia:dev
+  image: b3lugach4n/heli-demo:latest
