@@ -1,11 +1,12 @@
 meta:
-  environment: docker
+  environment: csharp
   toolchain:
-    name: docker
-    version: latest
+    name: dotnet
+    version: "8.0"
 build:
-  dockerfile: Dockerfile
-  skip: false
+  image: b3lugach4n/heli-demo:latest
 run:
   persistenceMount: /data
   containerPort: 80
+  buildFileName: publish/Helicopters_Russia
+  image: b3lugach4n/heli-demo:latest
