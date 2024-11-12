@@ -5,9 +5,9 @@ meta:
     name: dotnet
     version: 8.0
 build:
-  image: b3lugach4n/heli-demo:latest
+  image: mcr.microsoft.com/dotnet/sdk:8.0
 run:
+  image: mcr.microsoft.com/dotnet/sdk:8.0
   persistenceMount: /data
   containerPort: 80
-  buildFileName: publish/Helicopters_Russia
-  image: b3lugach4n/heli-demo:latest
+  buildFileName: botService
