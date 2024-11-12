@@ -32,7 +32,7 @@ RUN dotnet restore
 
 # Копируем остальные файлы и выполняем публикацию
 COPY . .
-RUN dotnet publish -c Release -o /app/publish
+RUN dotnet publish -c Release --property:PublishDir=/app/publish
 
 # Стадия исполнения
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
