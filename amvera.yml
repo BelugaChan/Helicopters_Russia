@@ -1,0 +1,13 @@
+---
+meta:
+  environment: csharp
+  toolchain:
+    name: dotnet
+    version: 8.0
+build:
+  image: helicoptersrussia:dev
+run:
+  persistenceMount: /data
+  containerPort: 80
+  buildFileName: publish/Helicopters_Russia
+  image: helicoptersrussia:dev
