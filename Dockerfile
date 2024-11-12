@@ -21,32 +21,18 @@
 #WORKDIR /app
 #COPY --from=publish /app/publish .
 #ENTRYPOINT ["dotnet", "Helicopters_Russia.dll"]
-# Базовый образ для исполнения приложения
-FROM mcr.microsoft.com/dotnet/runtime:8.0 AS base
-WORKDIR /app
-USER app
 
-# Стадия сборки
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-
-# Копируем и восстанавливаем зависимости проекта
-COPY ["Helicopters_Russia.csproj", "./"]
-RUN dotnet restore "./Helicopters_Russia.csproj"
-
-# Копируем остальные файлы и выполняем сборку
-COPY . .
-RUN dotnet build "./Helicopters_Russia.csproj" -c $BUILD_CONFIGURATION -o /app/build
-
-# Стадия публикации
-FROM build AS publish
-ARG BUILD_CONFIGURATION=Release
-WORKDIR /src
-RUN dotnet publish "./Helicopters_Russia.csproj" -c $BUILD_CONFIGURATION -o /app/publish
-
-# Финальная стадия для создания контейнера
-FROM base AS final
 WORKDIR /app
-COPY --from=publish /app/publish .
+
+COPY *.csproj ./
+RUN dotnet restore
+
+COPY . ./
+RUN dotnet publish -c Release -o out
+
+FROM mcr.microsoft.com/dotnet/runtime:8.0
+WORKDIR /app
+COPY --from=build /app/out .
+
 ENTRYPOINT ["dotnet", "Helicopters_Russia.dll"]
