@@ -27,12 +27,12 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Копируем файл проекта и восстанавливаем зависимости
-COPY *.csproj ./
+COPY ["Helicopters_Russia.csproj", "./"]
 RUN dotnet restore
 
 # Копируем остальные файлы и выполняем публикацию
 COPY . .
-RUN dotnet publish -c Release --property:PublishDir=/app/publish
+RUN dotnet publish -c Release -o /app/publish
 
 # Стадия исполнения
 FROM mcr.microsoft.com/dotnet/runtime:8.0 AS runtime
