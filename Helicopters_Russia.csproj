@@ -2,7 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Nullable>enable</Nullable>
+	  <OutputPath>/app/publish/</OutputPath>
+	  <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-Helicopters_Russia-96138eec-65f4-4616-b341-851d60db0345</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
