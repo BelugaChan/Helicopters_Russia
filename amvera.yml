@@ -1,4 +1,3 @@
----
 meta:
   environment: csharp
   toolchain:
@@ -11,4 +10,3 @@ run:
   buildFileName: Helicopters_Russia
   persistenceMount: /data
   containerPort: 80
-  
