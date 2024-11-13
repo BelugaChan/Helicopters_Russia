@@ -246,6 +246,9 @@ namespace Helicopters_Russia.Services
 
                 _logger.LogInformation("Файлы обработаны, отправляем результат пользователю");
 
+                System.IO.File.Delete(dirtyFilePath); // Удаляем временный файл после обработки
+                System.IO.File.Delete(cleanFilePath); // Удаляем временный файл после обработки
+
                 // Проверка размера файла и выбор способа отправки
                 var fileInfo = new FileInfo(resultFilePath);
                 if (fileInfo.Length > 49 * 1024 * 1024)
@@ -265,6 +268,8 @@ namespace Helicopters_Russia.Services
                 _userStates[chatId] = UserState.Idle;
                 _userDirtyFiles.Remove(chatId);
                 _userCleanFiles.Remove(chatId);
+
+                System.IO.File.Delete(resultFilePath); // Удаляем временный файл после обработки
 
                 _logger.LogInformation($"Файл с результатом отправлен пользователю {chatId}");
             }
@@ -319,11 +324,11 @@ namespace Helicopters_Russia.Services
         {
             try
             {
-                string directoryPath = "/app/Data/";
-                if (!Directory.Exists(directoryPath))
-                {
-                    Directory.CreateDirectory(directoryPath);
-                }
+                //string directoryPath = "/app/Data/";
+                //if (!Directory.Exists(directoryPath))
+                //{
+                //    Directory.CreateDirectory(directoryPath);
+                //}
 
                 // Используем IExcelMerger для объединения файлов
                 IExcelMerger excelMerger = new NPOIMerger(); // Здесь можно внедрить через DI, если нужно.
