@@ -10,4 +10,4 @@ run:
   image: mcr.microsoft.com/dotnet/sdk:8.0
   persistenceMount: /data
   containerPort: 80
-  buildFileName: publish/Helicopters_Russia
+  buildFileName: Helicopters_Russia
