@@ -7,6 +7,6 @@ build:
   image: mcr.microsoft.com/dotnet/sdk:8.0
 run:
   image: mcr.microsoft.com/dotnet/sdk:8.0
-  buildFileName: Helicopters_Russia
+  buildFileName: Program.cs
   persistenceMount: /data
   containerPort: 80
