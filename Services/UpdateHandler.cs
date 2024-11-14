@@ -17,6 +17,8 @@ namespace Helicopters_Russia.Services
 {
     public class UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger, FileProcessingService fileProcessingService) : IUpdateHandler
     {
+        private readonly string downloadDataPath = "/app/Download Data";
+        private readonly string dataPath = "/app/Data";
         private readonly ITelegramBotClient _botClient = botClient;
         private readonly ILogger<UpdateHandler> _logger = logger;
         private readonly FileProcessingService _fileProcessingService = fileProcessingService;
@@ -33,14 +35,13 @@ namespace Helicopters_Russia.Services
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken) // Обработка сообщений 
         {
             var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
-            var directoryPath = Path.Combine(rootDirectory, "Download Data");
-
+            //var directoryPath = Path.Combine(rootDirectory, "Download Data");
             if (_userDirtyFiles.Count == 0 && _userCleanFiles.Count == 0)
             {
-                if (Directory.Exists("Download Data"))
+                if (Directory.Exists(/*"Download Data"*/downloadDataPath))
                 {
                     // Получаем массив файлов в указанной папке
-                    var files = Directory.GetFiles("Download Data");
+                    var files = Directory.GetFiles(downloadDataPath/*"Download Data"*/);
 
                     // Если файлы существуют, удаляем их
                     if (files.Length > 0)
@@ -52,16 +53,16 @@ namespace Helicopters_Russia.Services
                         _logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted.");
                     }
                 }
-                else if (!Directory.Exists("Download Data")) //Если папка не существует, создаем ее
+                else if (!Directory.Exists(downloadDataPath/*"Download Data"*/)) //Если папка не существует, создаем ее
                 {
-                        Directory.CreateDirectory("Download Data");
+                        Directory.CreateDirectory(downloadDataPath);
                         _logger.LogInformation("The folder \"Download Data\" was created.");
                 }
 
-                if (Directory.Exists("Data"))
+                if (Directory.Exists(dataPath/*"Data"*/))
                 {
                     // Получаем массив файлов в указанной папке
-                    var files = Directory.GetFiles("Data");
+                    var files = Directory.GetFiles(dataPath/*"Data"*/);
 
                     // Если файлы существуют, удаляем их
                     if (files.Length > 0)
@@ -73,9 +74,9 @@ namespace Helicopters_Russia.Services
                         _logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted.");
                     }
                 }
-                else if (!Directory.Exists("Data")) //Если папка не существует, создаем ее
+                else if (!Directory.Exists(dataPath/*"Data"*/)) //Если папка не существует, создаем ее
                 {
-                    Directory.CreateDirectory("Data");
+                    Directory.CreateDirectory(dataPath/*"Data"*/);
                     _logger.LogInformation("The folder \"Data\" was created.");
                 }
             }
@@ -192,7 +193,7 @@ namespace Helicopters_Russia.Services
             var fileExtension = Path.GetExtension(document.FileName); // Получаем расширение файла
             var fileName = document.FileId; // использует имя файла - id этого файла   
             //var fileName = document.FileName ?? fileId; // используем имя файла, если оно есть, иначе - его id
-            var filePath = Path.Combine("Download data", fileName + fileExtension);
+            var filePath = Path.Combine(/*"Download data"*/downloadDataPath, fileName + fileExtension);
 
             var file = await botClient.GetFileAsync(document.FileId, cancellationToken); // Загружаем документ
 
@@ -361,7 +362,7 @@ namespace Helicopters_Russia.Services
 
                 // Мержим грязные файлы
                 var dirtyFilePaths = _userDirtyFiles[chatId];  // Получаем пути всех грязных файлов
-                var dirtyOutputPath = "Data";  // Путь для сохранения объединенного файла
+                var dirtyOutputPath = dataPath/*"Data"*/;  // Путь для сохранения объединенного файла
                 var dirtyResultFileName = "Грязные данные.xlsx";  // Имя объединенного файла
 
                 // Проверяем, существует ли файл, и если да, то удаляем его
@@ -382,7 +383,7 @@ namespace Helicopters_Russia.Services
 
                 // Мержим чистые файлы
                 var cleanFilePaths = _userCleanFiles[chatId];  // Получаем пути всех чистых файлов
-                var cleanOutputPath = "Data";  // Путь для сохранения объединенного файла
+                var cleanOutputPath = dataPath/*"Data"*/;  // Путь для сохранения объединенного файла
                 var cleanResultFileName = "Чистые данные.xlsx";  // Имя объединенного файла
 
                 // Проверяем, существует ли файл, и если да, то удаляем его
@@ -416,8 +417,8 @@ namespace Helicopters_Russia.Services
             try
             {                
                 // Указываем пути к объединенным файлам
-                var dirtyFilePath = Path.Combine("Data", "Грязные данные.xlsx");
-                var cleanFilePath = Path.Combine("Data", "Чистые данные.xlsx");
+                var dirtyFilePath = Path.Combine(/*"Data"*/dataPath, "Грязные данные.xlsx");
+                var cleanFilePath = Path.Combine(/*"Data"*/dataPath, "Чистые данные.xlsx");
 
                 // Проверка существования файлов
                 if (!System.IO.File.Exists(dirtyFilePath) || !System.IO.File.Exists(cleanFilePath))
@@ -483,7 +484,7 @@ namespace Helicopters_Russia.Services
             // Пока файл не полностью отправлен
             while (fileStream.Position < fileStream.Length)
             {
-                var partPath = $"Data/Result_Part{partNumber}.xlsx";
+                var partPath = $"{dataPath}/Result_Part{partNumber}.xlsx";
 
                 // Создаем новую часть файла, пока она не достигнет лимита
                 using var partStream = new FileStream(partPath, FileMode.Create, FileAccess.Write);
