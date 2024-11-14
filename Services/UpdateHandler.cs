@@ -37,10 +37,10 @@ namespace Helicopters_Russia.Services
 
             if (_userDirtyFiles.Count == 0 && _userCleanFiles.Count == 0)
             {
-                if (Directory.Exists("Download data"))
+                if (Directory.Exists("Download Data"))
                 {
                     // Получаем массив файлов в указанной папке
-                    var files = Directory.GetFiles("Download data");
+                    var files = Directory.GetFiles("Download Data");
 
                     // Если файлы существуют, удаляем их
                     if (files.Length > 0)
@@ -57,7 +57,29 @@ namespace Helicopters_Russia.Services
                         Directory.CreateDirectory("Download Data");
                         _logger.LogInformation("The folder \"Download Data\" was created.");
                 }
+
+                if (Directory.Exists("Data"))
+                {
+                    // Получаем массив файлов в указанной папке
+                    var files = Directory.GetFiles("Data");
+
+                    // Если файлы существуют, удаляем их
+                    if (files.Length > 0)
+                    {
+                        foreach (var file in files)
+                        {
+                            System.IO.File.Delete(file); // Удаляем файл
+                        }
+                        _logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted.");
+                    }
+                }
+                else if (!Directory.Exists("Data")) //Если папка не существует, создаем ее
+                {
+                    Directory.CreateDirectory("Data");
+                    _logger.LogInformation("The folder \"Data\" was created.");
+                }
             }
+
 
             cancellationToken.ThrowIfCancellationRequested();
             {
