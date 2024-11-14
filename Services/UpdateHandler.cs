@@ -11,6 +11,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Helicopters_Russia.Services
 {
@@ -19,18 +20,45 @@ namespace Helicopters_Russia.Services
         private readonly ITelegramBotClient _botClient = botClient;
         private readonly ILogger<UpdateHandler> _logger = logger;
         private readonly FileProcessingService _fileProcessingService = fileProcessingService;
-        private Dictionary<long, List<string>> _userDirtyFiles = new();
-        private Dictionary<long, List<string>> _userCleanFiles = new();
+        private Dictionary<long, List<string>> _userDirtyFiles = new(); // Список Грязных файлов для каждого пользователя
+        private Dictionary<long, List<string>> _userCleanFiles = new(); // Список Чистых файлов для каждого пользователя
         private static readonly ConcurrentDictionary<long, Models.UserState> _userStates = new(); //Состояние пользователей
 
-        public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
+        public Task HandlePollingErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken) // Обработка ошибок
         {
             _logger.LogInformation($"HandleError: {exception}");
             return Task.CompletedTask;
         }
 
-        public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
+        public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken) // Обработка сообщений 
         {
+            var rootDirectory = AppDomain.CurrentDomain.BaseDirectory;
+            var directoryPath = Path.Combine(rootDirectory, "Download Data");
+
+            if (_userDirtyFiles.Count == 0 && _userCleanFiles.Count == 0)
+            {
+                if (Directory.Exists("Download data"))
+                {
+                    // Получаем массив файлов в указанной папке
+                    var files = Directory.GetFiles("Download data");
+
+                    // Если файлы существуют, удаляем их
+                    if (files.Length > 0)
+                    {
+                        foreach (var file in files)
+                        {
+                            System.IO.File.Delete(file); // Удаляем файл
+                        }
+                        _logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted.");
+                    }
+                }
+                else if (!Directory.Exists("Download Data")) //Если папка не существует, создаем ее
+                {
+                        Directory.CreateDirectory("Download Data");
+                        _logger.LogInformation("The folder \"Download Data\" was created.");
+                }
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
             {
                 //Telegram.Bot.Types.Document
@@ -43,21 +71,46 @@ namespace Helicopters_Russia.Services
             }
         }
 
-        private async Task OnMessage(Message msg, Update update, CancellationToken cancellationToken)
+        private async Task OnMessage(Message msg, Update update, CancellationToken cancellationToken) // Обработка текстовых сообщений 
         {
             _logger.LogInformation($"Receive message \n\t\ttype: \"{update.Message.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\"\n");
-            if (update.Message.Text is { } messageText)
+            if (update.Message.Text is { } messageText )
                 await (messageText.Split(' ')[0] switch
                 {
                     "/proccesing_start" => StartProccessing(update),
-                    _ => Usage(msg)
+                    _ => UnknownCommand(msg, update)
                 });
 
             else if (update.Message.Document != null)
                 await HandleDocumentUpload(update, cancellationToken);
         }
 
-        async Task<Message> Usage(Message msg)
+        async Task<Message> UnknownCommand(Message msg, Update update) //Обработка неизвестной команды 
+        {
+            _logger.LogInformation($"Receive unknown command\n\t\tcommand: \"{msg.Text}\", type: \"{update.Message.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\"\n");
+
+            const string usage = """
+                Вы ввели неизвестную команду
+             """;
+            
+            await _botClient.SendTextMessageAsync(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+
+            return await Usage(msg);
+        }
+
+        async Task<Message> InvalidUserState(Message msg, Update update) // Обработка ошибки состояния пользователя
+        {
+            _logger.LogInformation($"Data received from user prior to command invocation\n\t\tData: \"{update.Message.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\"\n");
+
+            const string usage = """
+                Для обработки данных сначала нужно вызвать команду
+                /proccesing_start  - Начать обработку файлов
+             """;
+
+            return await _botClient.SendTextMessageAsync(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        }
+
+        async Task<Message> Usage(Message msg) //Вывод команд 
         {
             const string usage = """
                  <b><u>Bot menu</u></b>:
@@ -66,7 +119,7 @@ namespace Helicopters_Russia.Services
             return await _botClient.SendTextMessageAsync(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
         }
 
-        private async Task StartProccessing(Update update)
+        private async Task StartProccessing(Update update) //Начало обработки пользователя 
         {
             var chatId = update.Message.Chat.Id;
             _logger.LogInformation($"The \"StartProccessingFiles\" method was called from the user: \"{update.Message.From}\"\n");
@@ -83,33 +136,49 @@ namespace Helicopters_Russia.Services
                     cancellationToken: default
                 );
             }
+            else if (_userStates.TryGetValue(chatId, out userState) && (userState == UserState.WaitingForCleanData || userState == UserState.WaitingForDirtyData))
+            {
+                if (userState == UserState.WaitingForCleanData)
+                    await _botClient.SendTextMessageAsync(
+                        chatId,
+                        "Пожалуйста, отправьте \"чистые\" данные.",
+                        cancellationToken: default
+                    );
+                else if (userState == UserState.WaitingForDirtyData)
+                    await _botClient.SendTextMessageAsync(
+                        chatId,
+                        "Пожалуйста, отправьте \"грязные\" данные.",
+                        cancellationToken: default
+                    );
+            }
         }
 
-        private async Task HandleDocumentUpload(Update update, CancellationToken cancellationToken)
+        private async Task HandleDocumentUpload(Update update, CancellationToken cancellationToken) // Получение файлов 
         {
-            var chatId = update.Message.Chat.Id;
+            var chatId = update.Message.Chat.Id; // Получаем Id чата
 
-            if (!_userStates.TryGetValue(chatId, out var userState)) //Проверяем состояние пользователя
+            // Проверяем состояние пользователя
+            if (!_userStates.TryGetValue(chatId, out var userState)) 
+            {
+                await InvalidUserState(update.Message, update);
                 return;
-
-            var document = update.Message.Document;
-            var fileId = document.FileId;
-            var fileName = document.FileName ?? "UnnamedFile"; // используем имя файла, если оно есть
-            var filePath = Path.Combine("Download data", document.FileName);
-
-            string directoryPath = "/app/Download data/";
-            if (!Directory.Exists(directoryPath)) 
-            { 
-                Directory.CreateDirectory(directoryPath); 
             }
+                
 
-            var file = await botClient.GetFileAsync(document.FileId, cancellationToken);
+            var document = update.Message.Document; // Получаем документ
+            var fileId = document.FileId; // Получаем его Id
+            var fileExtension = Path.GetExtension(document.FileName); // Получаем расширение файла
+            var fileName = document.FileId; // использует имя файла - id этого файла   
+            //var fileName = document.FileName ?? fileId; // используем имя файла, если оно есть, иначе - его id
+            var filePath = Path.Combine("Download data", fileName + fileExtension);
+
+            var file = await botClient.GetFileAsync(document.FileId, cancellationToken); // Загружаем документ
 
             _logger.LogInformation($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\"\n");
 
-            if (userState == UserState.WaitingForDirtyData && update.Message.Type == MessageType.Document)
+            if (userState == UserState.WaitingForDirtyData)
             {
-                _logger.LogInformation($"Добавлен файл \"грязных\" данных от пользователя {update.Message.From.Username}.");
+                _logger.LogInformation($"Added file of \"Dirty\" data from the user: \"{update.Message.From}\"\n");
 
                 // Сохраняем путь к файлу (не fileId) в список "грязных" файлов
                 if (!_userDirtyFiles.ContainsKey(chatId))
@@ -123,23 +192,31 @@ namespace Helicopters_Russia.Services
                     await _botClient.DownloadFileAsync(file.FilePath!, fileStream, cancellationToken);
                 }
 
-                // Inline кнопка для завершения отправки грязных файлов
+                // Inline кнопки
                 var inlineKeyboard = new InlineKeyboardMarkup(new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Все грязные файлы отправлены", "dirty_files_done")
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("Отправлены неправильные \"Грязные\" данные", "incorrect_dirty_data_sent") // кнопка для отмены отправки файлов
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("Все \"Грязные\" файлы отправлены", "dirty_files_done") // подтверждение отправки
+                    }
                 });
 
                 await _botClient.SendTextMessageAsync(
                     chatId,
-                    "Файл принят. Добавьте еще файлы или нажмите \"Все грязные файлы отправлены\".",
+                    "Файл принят.\n    Добавьте еще файлы или нажмите \"Все \"Грязные\" файлы отправлен\".\n    Если был отправлен неправильный файл, нажмите \"Отправлены неправильные \"Грязные\" данные\".",
                     replyMarkup: inlineKeyboard,
                     cancellationToken: default
                 );
 
             }
+
             else if (userState == UserState.WaitingForCleanData)
             {
-                _logger.LogInformation($"Добавлен файл \"чистых\" данных от пользователя {update.Message.From.Username}.");
+                _logger.LogInformation($"Added file of \"Clean\" data from the user: \"{update.Message.From}\"\n");
 
                 // Сохраняем путь к файлу (не fileId) в список "чистых" файлов
                 if (!_userCleanFiles.ContainsKey(chatId))
@@ -147,85 +224,175 @@ namespace Helicopters_Russia.Services
 
                 _userCleanFiles[chatId].Add(filePath);
 
+                // Сохраняем файл временно
                 await using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
                     await _botClient.DownloadFileAsync(file.FilePath!, fileStream, cancellationToken);
                 }
 
+                // Inline кнопки
                 var inlineKeyboard = new InlineKeyboardMarkup(new[]
                 {
-                    InlineKeyboardButton.WithCallbackData("Все чистые файлы отправлены", "clean_files_done")
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("Отправлены неправильные \"Чистые\" данные", "incorrect_clear_data_sent") // кнопка для отмены отправки файлов
+                    },
+                    new[]
+                    {
+                        InlineKeyboardButton.WithCallbackData("Все \"Чистые\" файлы отправлены", "clean_files_done") // подтверждение отправки
+                    }
                 });
 
                 await _botClient.SendTextMessageAsync(
                     chatId,
-                    "Файл принят. Добавьте еще файлы или нажмите \"Все чистые файлы отправлены\".",
+                    "Файл принят.\n    Добавьте еще файлы или нажмите \"Все \"Чистые\" файлы отправлен\".\n    Если был отправлен неправильный файл, нажмите \"Отправлены неправильные \"Чистые\" данные\".",
                     replyMarkup: inlineKeyboard,
                     cancellationToken: default
                 );
             }
         }
 
-        public async Task OnCallbackQuery(CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        public async Task OnCallbackQuery(CallbackQuery callbackQuery, CancellationToken cancellationToken) // Ответы на Inline кнопки 
         {
             var chatId = callbackQuery.Message.Chat.Id;
 
-            if (callbackQuery.Data == "dirty_files_done" && _userStates[chatId] == UserState.WaitingForDirtyData)
+            // Проверяем состояние пользователя
+            if (!_userStates.TryGetValue(chatId, out var userState)) 
             {
-                // Переходим к ожиданию "чистых" данных
-                _userStates[chatId] = UserState.WaitingForCleanData;
+                return;
+            }
+
+            // Удаление Чистых файлов 
+            if (callbackQuery.Data == "incorrect_clear_data_sent") 
+            {
+                var cleanFilePaths = _userCleanFiles[chatId]; // Получаем пути всех чистых файлов
+
+                // Удаляем файлы
+                foreach (var file in cleanFilePaths) 
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(file))
+                        {
+                            System.IO.File.Delete(file);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error deleting uploaded clean files: {ex.Message}\n");
+                    }
+                }
+
+                _userCleanFiles[chatId].Clear(); // Удаляем сохранения файлов для пользователя
+
+                _logger.LogInformation($"Deleted \"Clean\" data for the user: \"{callbackQuery.From}\"");
+
+                await _botClient.SendTextMessageAsync(
+                    chatId,
+                    "\"Чистые\" файлы были удалены. Можете загрузить их заново",
+                    cancellationToken: cancellationToken
+                );
+            }
+
+            // Удаление Грязных данных
+            else if (callbackQuery.Data == "incorrect_dirty_data_sent") 
+            {
+                var dirtyFilePaths = _userDirtyFiles[chatId]; // Получаем пути всех чистых файлов
+
+                // Удаляем файлы
+                foreach (var file in dirtyFilePaths) 
+                {
+                    try
+                    {
+                        if (System.IO.File.Exists(file))
+                        {
+                            System.IO.File.Delete(file);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError($"Error deleting uploaded dirty files: {ex.Message}");
+
+                        //await _botClient.SendTextMessageAsync(
+                        //    chatId,
+                        //    "Произошла ошибка при удалении файлов.",
+                        //    cancellationToken: cancellationToken
+                        //);
+                    }
+                }
+
+                _userDirtyFiles[chatId].Clear(); // Удаляем сохранения файлов для пользователя
+
+                _logger.LogInformation($"Deleted \"Dirty\" data for the user: \"{callbackQuery.From}\"");
+
+                await _botClient.SendTextMessageAsync(
+                    chatId,
+                    "\"Грязные\" файлы были удалены. Можете загрузить их заново",
+                    cancellationToken: cancellationToken
+                );
+            }
+
+            // Все грязные данные получены
+            else if (callbackQuery.Data == "dirty_files_done" && _userStates[chatId] == UserState.WaitingForDirtyData) 
+            {
+                _userStates[chatId] = UserState.WaitingForCleanData; // Переходим к ожиданию "чистых" данных
 
                 // Мержим грязные файлы
                 var dirtyFilePaths = _userDirtyFiles[chatId];  // Получаем пути всех грязных файлов
                 var dirtyOutputPath = "Data";  // Путь для сохранения объединенного файла
                 var dirtyResultFileName = "Грязные данные.xlsx";  // Имя объединенного файла
 
-                await MergeFilesAsync(dirtyFilePaths, dirtyOutputPath, dirtyResultFileName, cancellationToken);
+                // Проверяем, существует ли файл, и если да, то удаляем его
+                if (System.IO.File.Exists(Path.Combine(dirtyOutputPath, dirtyResultFileName)))  
+                {
+                    System.IO.File.Delete(Path.Combine(dirtyOutputPath, dirtyResultFileName));
+                }
+
+                await MergeFilesAsync(dirtyFilePaths, dirtyOutputPath, dirtyResultFileName, cancellationToken); // Объединение и сохранение
 
                 await _botClient.SendTextMessageAsync(chatId, "Теперь отправьте \"чистые\" данные.", cancellationToken: default);
             }
-            else if (callbackQuery.Data == "clean_files_done" && _userStates[chatId] == UserState.WaitingForCleanData)
+
+            // Все Чистые данные получены
+            else if (callbackQuery.Data == "clean_files_done" && _userStates[chatId] == UserState.WaitingForCleanData) 
             {
-                // Заканчиваем прием файлов и переходим к обработке
-                _userStates[chatId] = UserState.Idle;
+                _userStates[chatId] = UserState.Idle; // Заканчиваем прием файлов и переходим к обработке
 
                 // Мержим чистые файлы
                 var cleanFilePaths = _userCleanFiles[chatId];  // Получаем пути всех чистых файлов
                 var cleanOutputPath = "Data";  // Путь для сохранения объединенного файла
                 var cleanResultFileName = "Чистые данные.xlsx";  // Имя объединенного файла
 
-                await MergeFilesAsync(cleanFilePaths, cleanOutputPath, cleanResultFileName, cancellationToken);
+                // Проверяем, существует ли файл, и если да, то удаляем его
+                if (System.IO.File.Exists(Path.Combine(cleanOutputPath, cleanResultFileName)))
+                {
+                    System.IO.File.Delete(Path.Combine(cleanOutputPath, cleanResultFileName));
+                }
 
-
+                await MergeFilesAsync(cleanFilePaths, cleanOutputPath, cleanResultFileName, cancellationToken); // Объединение и сохранение
 
                 await _botClient.SendTextMessageAsync(chatId, "Файлы получены. Начинаю обработку данных.", cancellationToken: default);
 
-                StartProccessingFiles(callbackQuery, cancellationToken);
-
-                // Здесь можно вызвать метод для обработки файлов
-                //await _fileProcessingService.ProcessFilesAsync(chatId, _userDirtyFiles[chatId], _userCleanFiles[chatId]);
+                StartProccessingFiles(callbackQuery, cancellationToken); // Запуск алгоритма
             }
 
             // Удаляем сообщение с кнопкой после нажатия
             await _botClient.EditMessageReplyMarkupAsync(chatId, callbackQuery.Message.MessageId, replyMarkup: null);
         }
 
-        private async Task StartProccessingFiles(CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        private async Task StartProccessingFiles(CallbackQuery callbackQuery, CancellationToken cancellationToken) // Запуск обработки алгоритма 
         {
-            var chatId = callbackQuery.Message.Chat.Id;
+            var chatId = callbackQuery.Message.Chat.Id; // Получаем Id чата
 
+            // Проверяем состояние пользователя
             if (_userStates[chatId] != UserState.Idle)
-                return;
+                return ;
 
-            _logger.LogInformation($"Запуск обработки файлов для пользователя {callbackQuery.From.Username}");
+            _logger.LogInformation($" Starting to process files for the user: \"{callbackQuery.From}\"");
 
+            // Запускаем алгоритм
             try
             {
-                //string directoryPath = "/app/Data/";
-                //if (!Directory.Exists(directoryPath))
-                //{
-                //    Directory.CreateDirectory(directoryPath);
-                //}
                 // Указываем пути к объединенным файлам
                 var dirtyFilePath = Path.Combine("Data", "Грязные данные.xlsx");
                 var cleanFilePath = Path.Combine("Data", "Чистые данные.xlsx");
@@ -241,13 +408,16 @@ namespace Helicopters_Russia.Services
                 _fileProcessingService.SaveDirtyFilePath(dirtyFilePath);
                 _fileProcessingService.SaveCleanFilePath(cleanFilePath);
 
+                // Проверка, есть ли уже результирующий файл, если есть, то удаляем
+                if (System.IO.File.Exists(Path.Combine("Data", "Result.xlsx"))) 
+                {
+                    System.IO.File.Delete(Path.Combine("Data", "Result.xlsx"));
+                }
+
                 // Запуск обработки файлов
                 var resultFilePath = await _fileProcessingService.ProcessFilesAsync(cancellationToken);
 
-                _logger.LogInformation("Файлы обработаны, отправляем результат пользователю");
-
-                System.IO.File.Delete(dirtyFilePath); // Удаляем временный файл после обработки
-                System.IO.File.Delete(cleanFilePath); // Удаляем временный файл после обработки
+                _logger.LogInformation($"Files have been processed, sending the result to the user \"{callbackQuery.From}\"\n");
 
                 // Проверка размера файла и выбор способа отправки
                 var fileInfo = new FileInfo(resultFilePath);
@@ -269,13 +439,16 @@ namespace Helicopters_Russia.Services
                 _userDirtyFiles.Remove(chatId);
                 _userCleanFiles.Remove(chatId);
 
-                System.IO.File.Delete(resultFilePath); // Удаляем временный файл после обработки
+                // Удаляем временные файл после обработки
+                System.IO.File.Delete(dirtyFilePath);
+                System.IO.File.Delete(cleanFilePath);
+                System.IO.File.Delete(resultFilePath); 
 
-                _logger.LogInformation($"Файл с результатом отправлен пользователю {chatId}");
+                _logger.LogInformation($"Result file has been sent to the user \"{callbackQuery.From}\"\n");
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Ошибка при обработке файлов: {ex.Message}");
+                _logger.LogError($"Error while processing files: {ex.Message}\n");
                 await _botClient.SendTextMessageAsync(
                     chatId,
                     "Произошла ошибка при обработке файлов. Пожалуйста, попробуйте снова.",
@@ -284,8 +457,9 @@ namespace Helicopters_Russia.Services
             }
         }
 
-        private async Task SplitAndSendLargeFileAsync(string filePath, long chatId, CancellationToken cancellationToken)
+        private async Task SplitAndSendLargeFileAsync(string filePath, long chatId, CancellationToken cancellationToken) // Если файл слишком большой, то разделяем его 
         {
+            // Настройки
             const long maxFileSize = 49 * 1024 * 1024; // 49MB
             int partNumber = 1;
             using var fileStream = new FileStream(filePath, FileMode.Open, FileAccess.Read);
@@ -295,7 +469,7 @@ namespace Helicopters_Russia.Services
             {
                 var partPath = $"Data/Result_Part{partNumber}.xlsx";
 
-                // Создайте новую часть файла, пока она не достигнет лимита
+                // Создаем новую часть файла, пока она не достигнет лимита
                 using var partStream = new FileStream(partPath, FileMode.Create, FileAccess.Write);
 
                 int bytesRead;
@@ -320,36 +494,27 @@ namespace Helicopters_Russia.Services
             }
         }
 
-        private async Task MergeFilesAsync(IEnumerable<string> filePaths, string outputFilePath, string resultFileName, CancellationToken cancellationToken)
+        private async Task MergeFilesAsync(IEnumerable<string> filePaths, string outputFilePath, string resultFileName, CancellationToken cancellationToken) //Объединение файлов 
         {
             try
             {
-                //string directoryPath = "/app/Data/";
-                //if (!Directory.Exists(directoryPath))
-                //{
-                //    Directory.CreateDirectory(directoryPath);
-                //}
-
                 // Используем IExcelMerger для объединения файлов
                 IExcelMerger excelMerger = new NPOIMerger(); // Здесь можно внедрить через DI, если нужно.
 
-                // Преобразуем список в List<string> (если это необходимо)
-                var fileList = filePaths.ToList();
+                var fileList = filePaths.ToList(); // Преобразуем список в List<string> (если это необходимо)
 
-                // Выполняем объединение файлов
-                await excelMerger.MergeExcelFilesAsync(fileList, outputFilePath, resultFileName);
+                await excelMerger.MergeExcelFilesAsync(fileList, outputFilePath, resultFileName); // Выполняем объединение файлов
 
-                _logger.LogInformation($"Файлы успешно объединены и сохранены в: {Path.Combine(outputFilePath, resultFileName)}");
+                _logger.LogInformation($"Files have been successfully merged and saved to: \"{Path.Combine(outputFilePath, resultFileName)}\"\n");
 
+                // Удаляем временные файлы после обработки
                 foreach ( var filePath in fileList )
-                    System.IO.File.Delete(filePath); // Удаляем временный файл после обработки
+                    System.IO.File.Delete(filePath); 
             }
             catch (Exception ex)
             {
-                _logger.LogError($"Ошибка при объединении файлов: {ex.Message}");
+                _logger.LogError($"Error while merging files: {ex.Message}\n");
             }
-
-
         }
 
         private Task UnknownUpdateHandlerAsync(Update update)
@@ -359,135 +524,3 @@ namespace Helicopters_Russia.Services
         }
     }
 }
-//public void UpdateUserState(long userId, UserState newState)
-//{
-//    _userStates[userId] = newState; // Обновляем или добавляем состояние пользователя
-//}
-//public UserState GetUserState(long userId)
-//{
-//    return _userStates.TryGetValue(userId, out var state) ? state : UserState.Idle; // Возвращаем состояние
-//}
-
-//public void HandleUpdateAsync(Update update, ITelegramBotClient botClient, CancellationToken cancellationToken)
-//{
-//    // Проверяем, является ли обновление сообщением
-//    if (update.Type == UpdateType.Message && update.Message != null)
-//    {
-//        long userId = update.Message.From.Id; // Получаем идентификатор пользователя
-
-//        // Теперь вы можете использовать userId для управления состоянием
-//        HandleUserInput(userId, update.Message.Text);
-//    }
-//}
-
-//public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
-//{
-
-
-
-//    //    long userId = update.Message.From.Id; // Получаем идентификатор пользователя
-//    //    var currentState = GetUserState(userId);
-
-//    //    switch (currentState)
-//    //    {
-//    //        case UserState.Idle:
-//    //            if (update.Type == UpdateType.Message && update.Message.Text == "/start")
-//    //            {
-//    //                Console.WriteLine($"Receive message type: {}");
-//    //            }
-//    //            break;
-
-//    //        case UserState.WaitingForDirtyData:
-//    //            break;
-
-//    //        case UserState.WaitingForCleanData: 
-//    //            break;
-//    //    }
-
-//    //    if (update.Type == UpdateType.Message && update.Message.Text == "/start")
-//    //    {
-//    //        _userStates[update.Message.Chat.Id] = Models.UserState.WaitingForDirtyData;
-//    //    }
-
-
-
-//if (update.Type == UpdateType.Message && update.Message.Text == "/start")
-//{
-//    // Устанавливаем начальное состояние пользователя
-//    _userStates[update.Message.Chat.Id] = Models.UserState.WaitingForDirtyData;
-
-//    await _botClient.SendTextMessageAsync(
-//        update.Message.Chat.Id,
-//        "Отправьте \"грязные\" данные.",
-//        cancellationToken: cancellationToken
-//    );
-//}
-//else if (update.Type == UpdateType.Message && update.Message.Document != null)
-//{
-//    // Получение файла
-//    var document = update.Message.Document;
-//    var filePath = Path.Combine("Data", document.FileName);
-
-//    // Скачиваем и сохраняем файл
-//    var file = await botClient.GetFileAsync(document.FileId, cancellationToken);
-//    await using (var fileStream = new FileStream(filePath, FileMode.Create))
-//    {
-//        await botClient.DownloadFileAsync(file.FilePath!, fileStream, cancellationToken);
-//    }
-
-//    // Обновляем состояние в зависимости от текущего этапа
-//    var userState = _userStates.GetOrAdd(update.Message.Chat.Id, Models.UserState.WaitingForDirtyData);
-
-//    if (userState == Models.UserState.WaitingForDirtyData)
-//    {
-//        _userStates[update.Message.Chat.Id] = Models.UserState.WaitingForCleanData;
-//        _fileProcessingService.SaveDirtyFilePath(filePath);
-
-//        await _botClient.SendTextMessageAsync(
-//            update.Message.Chat.Id,
-//            "Отправьте \"чистые\" данные.",
-//            cancellationToken: cancellationToken
-//        );
-//    }
-//    else if (userState == Models.UserState.WaitingForCleanData)
-//    {
-//        _fileProcessingService.SaveCleanFilePath(filePath);
-
-//        await _botClient.SendTextMessageAsync(
-//            update.Message.Chat.Id,
-//            "Начинается обработка.",
-//            cancellationToken: cancellationToken
-//        );
-
-//        // Запуск обработки файлов
-//        var resultFilePath = await _fileProcessingService.ProcessFilesAsync(cancellationToken);
-
-//        await _botClient.SendTextMessageAsync(
-//            update.Message.Chat.Id,
-//            "Обработка завершена",
-//            cancellationToken: cancellationToken
-//        );
-
-//        // Отправка результата пользователю
-//        await using var resultStream = System.IO.File.OpenRead(resultFilePath);
-//        var inputFile = new InputFileStream(resultStream, "Result.xlsx");
-
-//        await botClient.SendDocumentAsync(
-//            update.Message.Chat.Id,
-//            inputFile,
-//            cancellationToken: cancellationToken
-//        );
-
-//        // Сброс состояния пользователя
-//        _userStates[update.Message.Chat.Id] = Models.UserState.WaitingForDirtyData;
-//    }
-//}
-//else if (update.Type == UpdateType.Message && update.Message.Text != null)
-//{
-//    await botClient.SendTextMessageAsync(
-//        update.Message.Chat.Id,
-//        "Пожалуйста, загрузите Excel файлы для обработки.",
-//        cancellationToken: cancellationToken
-//    );
-//}
-//        }
