@@ -13,21 +13,21 @@ namespace Helicopters_Russia.Services
 {
     public class BotService : IHostedService
     {
-        private readonly ITelegramBotClient _botClient;
+        private readonly ITelegramBotClient botClient;
         private readonly UpdateHandler _updateHandler;
 
         public BotService(IOptions<BotConfiguration> config, UpdateHandler updateHandler)
         {
-            _botClient = new TelegramBotClient(config.Value.BotToken);
+            botClient = new TelegramBotClient(config.Value.BotToken);
             _updateHandler = updateHandler;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            var me = await _botClient.GetMeAsync(cancellationToken);
-            Console.WriteLine($"Bot started with username: {me.Username}");
+            var me = await botClient.GetMe(cancellationToken);
+            Console.WriteLine($"Bot started with username: {me.Username}, time: {DateTimeOffset.Now}");
 
-            _botClient.StartReceiving(
+            botClient.StartReceiving(
                 _updateHandler,
                 cancellationToken: cancellationToken
             );

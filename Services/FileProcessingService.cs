@@ -2,24 +2,13 @@
 using Algo.Interfaces;
 using Algo.Models;
 using ExcelHandler.Interfaces;
+using Helicopters_Russia;
+using Microsoft.Extensions.Options;
 
-public class FileProcessingService
+public class FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger<FileProcessingService> logger)
 {
-    private readonly ISimilarityCalculator _similarityCalculator;
-    private readonly IExcelReader _excelReader;
-    private readonly IExcelWriter _excelWriter;
-    private readonly ILogger<FileProcessingService> _logger;
-
     private string? _dirtyFilePath;
     private string? _cleanFilePath;
-
-    public FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger<FileProcessingService> logger)
-    {
-        _similarityCalculator = similarityCalculator;
-        _excelReader = excelReader;
-        _excelWriter = excelWriter;
-        _logger = logger;
-    }
 
     public void SaveDirtyFilePath(string path) => _dirtyFilePath = path;
     public void SaveCleanFilePath(string path) => _cleanFilePath = path;
@@ -46,20 +35,20 @@ public class FileProcessingService
             // Считываем данные из "чистого" и "грязного" файлов
             await Task.Run(() => //выделение отдельного потока для функций CreateCollectionFromExcel. Основной поток может выполнять другие действия, пока не завершится считывание файлов
             {
-                standarts = _excelReader.CreateCollectionFromExcel(cleanFilePath, new StandartFactory());//need to merge clean files
-                garbageData = _excelReader.CreateCollectionFromExcel(dirtyFilePath, new GarbageDataFactory());
+                standarts = excelReader.CreateCollectionFromExcel(cleanFilePath, new StandartFactory());//need to merge clean files
+                garbageData = excelReader.CreateCollectionFromExcel(dirtyFilePath, new GarbageDataFactory());
             });
 
             // Вычисляем коэффициенты схожести и разделяем на категории
             var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
-                _similarityCalculator.CalculateCoefficent(standarts, garbageData));            
+                similarityCalculator.CalculateCoefficent(standarts, garbageData));            
 
             // Записываем результаты в Excel
-            await _excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);            
+            await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);            
         }
         catch (Exception ex)
         {
-            _logger.Log(LogLevel.Error, $"На этапе обработки запроса возникла ошибка: {ex.Message}");
+            logger.Log(LogLevel.Error, $"На этапе обработки запроса возникла ошибка: {ex.Message}, Время - {DateTimeOffset.Now}");
         }
         return resultFilePath;
     }
