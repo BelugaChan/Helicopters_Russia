@@ -1,6 +1,51 @@
-version: '3.4'
+networks:
+  bot-dev:
+    driver: bridge 
+
 services:
     bot:
+        container_name: heli-bot
         build:
             context: ..
             dockerfile: Dockerfile
+        restart: always
+        depends_on:
+          - db
+        environment:
+            ConnectionStrings_DefaultConnection: "Host=db;Port=5432;Database=Heli_Russia;Username=admin;Password=admin"
+        volumes:
+          - ./init-scripts:/data
+          - ../Data:/app/initialxlsx
+        networks:
+          - bot-dev  
+
+    db:
+        container_name: db
+        image: postgres:latest
+        environment:
+          - POSTGRES_USER=admin
+          - POSTGRES_PASSWORD=admin
+          - POSTGRES_DB=Heli_Russia
+        ports:
+          - "5433:5432"
+        volumes:
+          - ../init.sql:/docker-entrypoint-initdb.d/init.sql
+          - ../Data:/data
+        networks:
+          - bot-dev
+
+    pgadmin:
+        image: dpage/pgadmin4:latest
+        container_name: pgadmin4_container
+        env_file:
+          - ./../.envs/pgadmin.env
+        ports:
+          - "8089:80"
+        volumes:
+          - pgadmin-data:/var/lib/pgadmin
+        depends_on:
+          - db
+        networks:
+          - bot-dev
+volumes:
+  pgadmin-data: {}
