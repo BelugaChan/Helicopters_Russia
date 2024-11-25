@@ -1,4 +1,5 @@
-﻿using ExcelHandler.Interfaces;
+﻿using Algo.Interfaces;
+using ExcelHandler.Interfaces;
 using ExcelHandler.Mergers;
 using Helicopters_Russia.Models;
 using Microsoft.Extensions.Options;
@@ -12,11 +13,10 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Helicopters_Russia.Services
 {
-    public class UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger, FileProcessingService fileProcessingService) : IUpdateHandler
+    public class UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger, FileProcessingService fileProcessingService, ISimilarityCalculator similarityCalculator) : IUpdateHandler
     {
         private readonly string downloadDataPath = "Download Data";
         private readonly string dataPath = "Data";
@@ -95,10 +95,11 @@ namespace Helicopters_Russia.Services
         private async Task OnMessage(Message msg, Update update, CancellationToken cancellationToken) // Обработка текстовых сообщений 
         {
             logger.LogInformation($"Receive message \n\t\ttype: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
-            if (update.Message.Text is { } messageText )
+            if (update.Message.Text is { } messageText)
                 await (messageText.Split(' ')[0] switch
                 {
                     "/proccesing_start" => StartProccessing(update),
+                    "/status" => GetStatus(update),
                     _ => UnknownCommand(msg, update)
                 });
 
@@ -136,8 +137,40 @@ namespace Helicopters_Russia.Services
             const string usage = """
                  <b><u>Bot menu</u></b>:
                  /proccesing_start  - Начать обработку файлов 
+                 /status - отобразить статус работы алгоритма
              """;
             return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        }
+
+        private async Task GetStatus(Update update)
+        {
+            var chatId = update.Message!.Chat.Id;
+            logger.LogInformation($"The \"GetStatus\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            var res = similarityCalculator.GetProgress();
+            if (res == 0 || double.IsNaN(res))
+            {
+                await botClient.SendMessage(
+                    chatId,
+                    "Алгоритм не начал работу.",
+                    cancellationToken: default
+                );
+            }
+            else if(res < 100)
+            {
+                await botClient.SendMessage(
+                    chatId,
+                    $"Процент выполнения задачи: {res:0.00}%",
+                    cancellationToken: default
+                );
+            }
+            else if(res == 100)
+            {
+                await botClient.SendMessage(
+                    chatId,
+                    $"Алгоритм полностью завершил работу",
+                    cancellationToken: default
+                );
+            }
         }
 
         private async Task StartProccessing(Update update) //Начало обработки пользователя 
@@ -392,8 +425,11 @@ namespace Helicopters_Russia.Services
                 await MergeFilesAsync(cleanFilePaths, cleanOutputPath, cleanResultFileName, cancellationToken); // Объединение и сохранение
 
                 await botClient.SendMessage(chatId, "Файлы получены. Начинаю обработку данных.", cancellationToken: default);
-
-                await StartProccessingFiles(callbackQuery, cancellationToken); // Запуск алгоритма
+                
+                _ = Task.Run(async () =>
+                {
+                    await StartProccessingFiles(callbackQuery, cancellationToken); // Запуск алгоритма
+                });
             }
 
             // Удаляем сообщение с кнопкой после нажатия
