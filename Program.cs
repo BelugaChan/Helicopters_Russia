@@ -13,7 +13,7 @@ namespace Helicopters_Russia
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);
-
+           
             // Подключаем конфигурацию
             var configuration = builder.Configuration;
             builder.Services.Configure<BotConfiguration>(configuration.GetSection("BotConfiguration"));
@@ -30,6 +30,7 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<FileProcessingService>();
             builder.Services.AddSingleton<UpdateHandler>();
             builder.Services.AddHostedService<BotService>();
+            builder.Services.AddSingleton<IHandle, CosineSimAlgo>();
             builder.Services.AddSingleton<ISimilarityCalculator, CosineSimAlgo>();
             builder.Services.AddSingleton<IExcelReader, NPOIReader>();
             builder.Services.AddSingleton<IExcelWriter, NPOIWriter>();
