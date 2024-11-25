@@ -1,6 +1,10 @@
-﻿using Algo.Abstract;
+﻿using Abstractions.Interfaces;
+using Algo.Abstract;
+using Algo.Interfaces;
+using Algo.Models;
 using F23.StringSimilarity;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -8,102 +12,81 @@ namespace Algo.Algotithms
 {
     public class CosineSimAlgo : SimilarityCalculator
     {
-        private int shigleLength = 3;
-        public CosineSimAlgo(int shigleLength)
+        //private int shigleLength;
+        private Cosine cosine;
+        private IENSHandler enshandler;
+        public CosineSimAlgo(IENSHandler eNSHandler, Cosine cosine /*int shigleLength = 3*/)
         {
-            this.shigleLength = shigleLength;
-        }
-        public string StringHandler(string str) //обработка строк
-        {
-            StringBuilder stringBuilder = new StringBuilder();
-
-            var fixedStr = str.ToUpper();
-            string result = Regex.Replace(fixedStr, pattern, " ");
-            foreach (var pair in replacements)
-            {
-                result = result.Replace(pair.Key, pair.Value);
-            }
-            result = result.TrimEnd('.');
-            var tokens = result.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
-            var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            if ("AEЁИOYЭЫЯ".IndexOf(filteredTokens[0][filteredTokens[0].Length - 1]) >= 0)
-            {
-                filteredTokens[0] = filteredTokens[0].Substring(0, filteredTokens[0].Length - 1);
-            }
-            for (int i = 0; i < filteredTokens.Count; i++)
-            {
-                stringBuilder.Append(filteredTokens[i]);
-            }
-            return stringBuilder.ToString();
+            //this.shigleLength = shigleLength;
+            this.cosine = cosine;
+            this.enshandler = eNSHandler;
         }
 
-        public override (HashSet<TGarbageData> worst, HashSet<TGarbageData> mid, HashSet<TGarbageData> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<TStandart> standarts, 
+        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
+            (/*List<TStandart> standarts*/ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart> standartDict, 
             List<TGarbageData> garbageData)
         {
-            var cosine = new Cosine(shigleLength);
+            currentProgress = 0;
+            totalGarbageDataItems = garbageData.Count;//инициализация, необходимая для получения процента выполнения алгоритма.
+            Dictionary<(TGarbageData, TStandart), double> worst = new();
+            Dictionary<(TGarbageData, TStandart), double> mid = new();
+            Dictionary<(TGarbageData, TStandart), double> best = new();
+            //var standartDict = new ConcurrentDictionary<ConcurrentDictionary<string, int>,TStandart>();
 
-            HashSet<TGarbageData> worst = new();
-            HashSet<TGarbageData> mid = new();
-            HashSet<TGarbageData> best = new();
-            var standartList = new List<Dictionary<string, int>>();
-
-            //var parallelOptions = new ParallelOptions
+            //Parallel.ForEach(standarts, parallelOptions, (standartItem, state) =>
             //{
-            //    MaxDegreeOfParallelism = Environment.ProcessorCount
-            //};
-            Parallel.ForEach(standarts, parallelOptions, (standartItem, state) =>
-            {
-                standartList.Add(cosine.GetProfile(StringHandler(standartItem.Name)).ToDictionary());
-            });
-            //foreach (var item in standarts)
-            //{
+            //    standartDict.TryAdd(new ConcurrentDictionary<string, int>(cosine.GetProfile(StringHandler(standartItem.Name))),standartItem);
+            //});
 
-            //}
-
-            ConcurrentBag<TGarbageData> worstBag = new ConcurrentBag<TGarbageData>();
-            ConcurrentBag<TGarbageData> midBag = new ConcurrentBag<TGarbageData>();
-            ConcurrentBag<TGarbageData> bestBag = new ConcurrentBag<TGarbageData>();
-            int processedItems = 0;
-
-            Parallel.ForEach(garbageData, parallelOptions, (item, state) =>
+            ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag = new();
+            ConcurrentDictionary<(TGarbageData, TStandart), double> midBag = new();
+            ConcurrentDictionary<(TGarbageData, TStandart), double> bestBag = new();
+            //int processedItems = 0;           
+            Parallel.ForEach(garbageData, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 double bestValue = -1;
-                var profileGarbge = cosine.GetProfile(StringHandler(item.ShortName));
-                foreach (var profile in standartList)
+                TStandart bestStandart = standartDict.FirstOrDefault().Value;
+                var profileGarbge = cosine.GetProfile(enshandler.StringHandler(item.ShortName));
+                foreach (var (profile, standart) in standartDict)
                 {
                     var res = cosine.Similarity(profile, profileGarbge);
                     if (res > bestValue)
+                    {
                         bestValue = res;
+                        bestStandart = standart;
+                    }                        
                     if (bestValue == 1)
                         break;
                 }
 
                 if (bestValue < 0.1)
-                    worstBag.Add(item);
+                {
+                    worstBag.TryAdd((item, bestStandart), Math.Round(bestValue,3));
+                }
                 else if (bestValue < 0.7)
-                    midBag.Add(item);
+                    midBag.TryAdd((item, bestStandart), Math.Round(bestValue, 3));
                 else
-                    bestBag.Add(item);
-                if (currentProgress % 5 == 0)
+                    bestBag.TryAdd((item, bestStandart), Math.Round(bestValue, 3));
+                if (currentProgress % 100 == 0)
                 {
                     Console.WriteLine($"текущий прогресс: {currentProgress} | наилучшее сопоставление (> 0.7), ед.: {bestBag.Count} | среднее сопоставление, ед: {midBag.Count}");
                 }
-                currentProgress = Interlocked.Increment(ref processedItems);
+                currentProgress = Interlocked.Increment(ref currentProgress);
             });
-            foreach (var item in worstBag)
+            foreach (var ((item, bestStandart), bestValue) in worstBag)
             {
-                worst.Add(item);
+                worst.Add((item, bestStandart), bestValue);
             }
-            foreach (var item in midBag)
+            foreach (var ((item, bestStandart), bestValue) in midBag)
             {
-                mid.Add(item);
+                mid.Add((item, bestStandart), bestValue);
             }
-            foreach (var item in bestBag)
+            foreach (var ((item, bestStandart), bestValue) in bestBag)
             {
-                best.Add(item);
+                best.Add((item, bestStandart), bestValue);
             }
             return (worst, mid, best);
+
         }
     }
 }
