@@ -14,12 +14,14 @@ namespace Algo.Handlers.Garbage
         private List<string> resGosts = new List<string>();
         private List<string> patterns = new List<string>() 
         {
-            @"ГОСТ \d{3,4,5}-\d{2,4}",
-            @"ОСТ \d{3,4,5}-\d{2,4}"
+            @"\b(ГОСТ|ОСТ)\s*\d{3,5}-\d{2,4}\b"
+            //@"ГОСТ \d{3,4,5}-\d{2,4}",
+            //@"ОСТ \d{3,4,5}-\d{2,4}"
             //@"Г\d{3,4,5}-\d{2,4}"
         };
         public List<string> GetGOSTFromGarbageName(string name)
         {
+            resGosts.Clear();
             var fixedName = name.ToUpper();
             foreach (var pattern in patterns)
             {

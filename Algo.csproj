@@ -9,6 +9,7 @@
   <ItemGroup>
     <PackageReference Include="F23.StringSimilarity" Version="6.0.0" />
     <PackageReference Include="NPOI" Version="2.7.1" />
+    <PackageReference Include="Pullenti.Core" Version="4.3.0" />
   </ItemGroup>
 
   <ItemGroup>

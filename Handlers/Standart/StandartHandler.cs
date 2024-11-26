@@ -1,6 +1,7 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Abstract;
 using Algo.Interfaces;
+using Algo.Models;
 using F23.StringSimilarity;
 using System;
 using System.Collections.Concurrent;
@@ -35,28 +36,44 @@ namespace Algo.Handlers.Standart
             var fixedStandarts = new List<TStandart>();
             foreach (var item in standarts)
             {
-                fixedStandarts.Add(factory.CreateUpdatedEntity(item.Id, item.Code, eNSHandler.StringHandler(item.Name), item.NTD, item.MaterialNTD, item.ENSClassification));
+                fixedStandarts.Add(factory.CreateUpdatedEntity(item.Id, item.Code, eNSHandler.BaseStringHandle(item.Name), item.NTD, item.MaterialNTD, item.ENSClassification));
             }
             return fixedStandarts;
         }
 
-        public ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart> HandleStandarts<TStandart>(List<TStandart> standarts)
+        public ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> HandleStandarts<TStandart>(Dictionary<string, List<TStandart>> standarts)
             where TStandart : IStandart
         {
-            var standartDict = new ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>();
+            var standartDict = new ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>();
             Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
-                standartDict.TryAdd(new ConcurrentDictionary<string, int>(cosine.GetProfile(standartItem.Name/*StringHandler()*/)), standartItem);
+                var midDict = new ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>();
+                foreach (var item in standartItem.Value)
+                {
+                    var internalDict = new ConcurrentDictionary<string, int>(cosine.GetProfile(item.Name).ToDictionary()); //один обработанный эталон                    
+                    midDict.TryAdd(internalDict, item);                    
+                }
+                standartDict.TryAdd(standartItem.Key, midDict);
             });
             return standartDict;
+            /*внешний словарь.
+             * Ключ - класс, по которым сгруппированы эталоны
+             * Значение - словарь словарей эталонов
+             *срединный словарь.
+             * Ключ - словарь с обработанными словами и частотами встречаемости? (чекнуть библиотеку). Значение - экземпляр класса Standart (добавлен для удобства)
+             */
         }
 
-        public Dictionary<string, List<TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, Dictionary<string, List<TStandart>> standarts)
+        public ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> standarts)
             where TStandart : IStandart
         {
-            var filteredData = standarts.Where(group => group.Value.Any(item => gosts.Contains(item.NTD) || gosts.Contains(item.MaterialNTD)))
-                .ToDictionary(group => group.Key, group => group.Value);
-            return filteredData;
+            var filteredData = standarts
+                .Where(category => category.Value
+                    .Any(subCategory => gosts
+                        .Any(gostItem => subCategory.Value.NTD.Contains(gostItem) || subCategory.Value.MaterialNTD.Contains(gostItem))));
+
+            return new ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>(filteredData);
+
         }
     }
 }

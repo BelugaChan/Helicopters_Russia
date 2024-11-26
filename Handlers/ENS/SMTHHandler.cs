@@ -10,5 +10,9 @@ namespace Algo.Handlers.ENS
 {
     public class SMTHHandler : ENSHandler
     {
+        public override string AdditionalStringHandle(string str)
+        {
+            return str; //заглушка
+        }
     }
 }

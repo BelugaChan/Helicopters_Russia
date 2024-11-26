@@ -1,5 +1,6 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Interfaces;
+using Algo.Models;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -37,7 +38,8 @@ namespace Algo.Abstract
         //    { "OCT1","OCT 1" }
         //};
 
-        public abstract (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>(/*List<TStandart> standarts*/ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart> standartDict, List<TGarbageData> garbageData)
+        public abstract (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
+            (ConcurrentDictionary<GarbageData, ConcurrentDictionary<string, List<Standart>>> data)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
 

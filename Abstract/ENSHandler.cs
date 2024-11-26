@@ -1,5 +1,8 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Interfaces;
+using MathNet.Numerics.Statistics;
+using Pullenti.Morph;
+using Pullenti.Ner;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,10 +14,10 @@ namespace Algo.Abstract
 {
     public abstract class ENSHandler : IENSHandler
     {
-        protected static HashSet<string> stopWords = new HashSet<string> { "СТ", "НА", "И", "ИЗ", "С", "СОДЕРЖ", "ТОЧН", "КЛ", "ШГ", "МЕХОБР", "КАЧ", "Х/Т", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КАЛИБР", "ХОЛ", "ПР", "ПРУЖ", "АВИАЦ", "КОНСТР", "КОНСТРУКЦ", "ПРЕЦИЗ", "СПЛ", "ПРЕСС", "КА4", "ОТВЕТСТВ", "НАЗНА4", "ОЦИНК", "НИК", "БЕЗНИКЕЛ", "ЛЕГИР", "АВТОМАТ", "Г/К", "КОРРОЗИННОСТОЙК", "Н/УГЛЕР", "ПРЕСС", "АЛЮМИН", "СПЛАВОВ" };
+        //protected static HashSet<string> stopWords = new HashSet<string> { "СТ", "НА", "И", "ИЗ", "С", "СОДЕРЖ", "ТОЧН", "КЛ", "ШГ", "МЕХОБР", "КАЧ", "Х/Т", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КАЛИБР", "ХОЛ", "ПР", "ПРУЖ", "АВИАЦ", "КОНСТР", "КОНСТРУКЦ", "ПРЕЦИЗ", "СПЛ", "ПРЕСС", "КА4", "ОТВЕТСТВ", "НАЗНА4", "ОЦИНК", "НИК", "БЕЗНИКЕЛ", "ЛЕГИР", "АВТОМАТ", "Г/К", "КОРРОЗИННОСТОЙК", "Н/УГЛЕР", "ПРЕСС", "АЛЮМИН", "СПЛАВОВ" };
 
-        protected static string pattern = @"(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])|(?<=[А-Яа-я])(?=\d)|(?<=\d)(?=[А-Яа-я])";
-
+        //protected static string pattern = @"(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])|(?<=[А-Яа-я])(?=\d)|(?<=\d)(?=[А-Яа-я])";
+        protected static string pattern = @",0{1,3}$";
         protected static Dictionary<string, string> replacements = new Dictionary<string, string>
         {
             { "А","A" },
@@ -32,10 +35,11 @@ namespace Algo.Abstract
             { "OCT1","OCT 1" }
         };
 
-        public virtual string StringHandler(string str) 
+        public abstract string AdditionalStringHandle(string str);
+        public virtual string BaseStringHandle(string str) //базовая обработка строк
         {
             StringBuilder stringBuilder = new StringBuilder();
-
+            
             var fixedStr = str.ToUpper();
             string result = Regex.Replace(fixedStr, pattern, " ");
             foreach (var pair in replacements)
@@ -44,16 +48,28 @@ namespace Algo.Abstract
             }
             result = result.TrimEnd(',');
             var tokens = result.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
-            var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            if ("AEЁИOYЭЫЯ".IndexOf(filteredTokens[0][filteredTokens[0].Length - 1]) >= 0)
+
+            //нормализация первого слова (приведение его к ед. числу)
+            Processor processor = ProcessorService.CreateProcessor();
+            AnalysisResult res = processor.Process(new SourceOfAnalysis(str));
+            var firstWord = res.FirstToken;
+
+            if (firstWord.Morph.Class.IsNoun)
             {
-                filteredTokens[0] = filteredTokens[0].Substring(0, filteredTokens[0].Length - 1);
+                tokens[0] = firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);
             }
-            for (int i = 0; i < filteredTokens.Count; i++)
-            {
-                stringBuilder.Append(filteredTokens[i]);
-            }
+            
+            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
+
+            //if ("AEЁИOYЭЫЯ".IndexOf(tokens[0][tokens[0].Length - 1]) >= 0)
+            //{
+            //    tokens[0] = tokens[0].Substring(0, tokens[0].Length - 1);
+            //}
+            //for (int i = 0; i < tokens.Length; i++)
+            //{
+            //    stringBuilder.Append(tokens[i]);
+            //}
             return stringBuilder.ToString();
-        } //обработка строк
+        } 
     }
 }

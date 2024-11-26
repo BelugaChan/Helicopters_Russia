@@ -13,13 +13,13 @@ namespace Algo.Interfaces
         List<TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts, IUpdatedEntityFactory<TStandart> factory)
         where TStandart : IStandart;
 
-        ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart> HandleStandarts<TStandart>(List<TStandart> standarts)
+        ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> HandleStandarts<TStandart>(Dictionary<string, List<TStandart>> standarts)
             where TStandart : IStandart;
 
         Dictionary<string, List<TStandart>> GroupingStandartsByENS<TStandart>(List<TStandart> standarts)
             where TStandart : IStandart;//new feature
 
-        Dictionary<string, List<TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, Dictionary<string, List<TStandart>> standarts)
+        ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> standarts)
             where TStandart : IStandart;
     }
 }
