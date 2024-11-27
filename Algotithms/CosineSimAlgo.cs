@@ -4,6 +4,7 @@ using Algo.Handlers.ENS;
 using Algo.Interfaces;
 using Algo.Models;
 using F23.StringSimilarity;
+using NPOI.SS.Formula.Functions;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
@@ -23,26 +24,89 @@ namespace Algo.Algotithms
             this.eNSHandler = eNSHandler;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (ConcurrentDictionary<GarbageData, ConcurrentDictionary<string, List<Standart>>> data)
+            (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>>> data)
         {
+            currentProgress = 0;
+            Dictionary<(TGarbageData, TStandart?), double> worst = new();
+            Dictionary<(TGarbageData, TStandart?), double> mid = new();
+            Dictionary<(TGarbageData, TStandart?), double> best = new();
+
+
+            ConcurrentDictionary<(TGarbageData, TStandart?), double> worstBag = new();
+            ConcurrentDictionary<(TGarbageData, TStandart?), double> midBag = new();
+            ConcurrentDictionary<(TGarbageData, TStandart?), double> bestBag = new();
+
+
             Parallel.ForEach(data, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
-                var garbageItem = item.Key;
-                string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageItem.ShortName);//базовая обработка наименования для каждой грязной позиции
-                var standarts = item.Value;//класс стандартов - ключ словаря, значения - все стандарты данной группы. У одной грязной позиции может быть сопоставление с несколькими группами эталонов (в теории)
-                string improvedProcessedGarbageName = "";
-                if (standarts.Keys.Contains("Ленты, широкополосный прокат"))
-                {
-                    SMTHHandler smthHandler = (SMTHHandler)eNSHandler;
-                    improvedProcessedGarbageName = smthHandler.AdditionalStringHandle(baseProcessedGarbageName);//специфическая обработка строки грязных данных в зависимости от класса позиции
-                }
-                //else if(standarts.Keys.Contains("класс")) { }
-                foreach (var standart in standarts.Values)
-                {
+                double similarityCoeff = -1;
+                TStandart? bestStandart = default;
+                var garbageDataItem = item.Keys.FirstOrDefault();
+                string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataItem.ShortName);
 
+                var standartStuff = item.Values; //сопоставленные группы эталонов для грязной позиции по ГОСТам
+                foreach (var standartGroups in standartStuff) //сравнение грязной строки со всеми позициями каждой из групп, где хотя бы в одном из элементов совпал гост с грязной позицией
+                {
+                    if (standartGroups.Count == 0)//null reference!!!!
+                    {
+                        worstBag.TryAdd((garbageDataItem, bestStandart), 0);
+                        break;
+                    }
+                    string improvedProcessedGarbageName = "";
+                    var groupClassificationName = standartGroups.Keys.FirstOrDefault();
+                    //switch-case
+                    if (groupClassificationName.Contains("Ленты, широкополосный прокат"))
+                    {
+                        SMTHHandler sMTHHandler = (SMTHHandler)eNSHandler;
+                        improvedProcessedGarbageName = sMTHHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                    }//другие обработчики   
+                    else
+                    {
+                        improvedProcessedGarbageName = baseProcessedGarbageName;
+                    }
+                              
+                    var garbageProfile = cosine.GetProfile(improvedProcessedGarbageName);
+
+                    foreach (var standart in standartGroups.Values) //стандарты в каждой отдельной группе
+                    {
+                        var similarity = cosine.Similarity(garbageProfile, standart.Keys.FirstOrDefault());
+                        if (similarity > similarityCoeff)
+                        {
+                            similarityCoeff = similarity;
+                            bestStandart = standart.Values.FirstOrDefault();
+                        }
+                    }
                 }
+                //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
+                if (similarityCoeff < 0.05)
+                {
+                    worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                }
+                else if (similarityCoeff < 0.7)
+                    midBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                else
+                    bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                if (currentProgress % 100 == 0)
+                {
+                    Console.WriteLine($"текущий прогресс: {currentProgress} | наилучшее сопоставление (> 0.7), ед.: {bestBag.Count} | среднее сопоставление, ед: {midBag.Count}");
+                }
+                currentProgress = Interlocked.Increment(ref currentProgress);
             });
-            return (null,null,null);
+
+
+            foreach (var ((item, bestStandart), bestValue) in worstBag)
+            {
+                worst.Add((item, bestStandart), bestValue);
+            }
+            foreach (var ((item, bestStandart), bestValue) in midBag)
+            {
+                mid.Add((item, bestStandart), bestValue);
+            }
+            foreach (var ((item, bestStandart), bestValue) in bestBag)
+            {
+                best.Add((item, bestStandart), bestValue);
+            }
+            return (worst, mid, best);
         }
         //List<ConcurrentDictionary<GarbageData, ConcurrentDictionary<string,List<Standart>>>>
 

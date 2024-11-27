@@ -58,18 +58,18 @@ namespace Algo.Abstract
             {
                 tokens[0] = firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);
             }
-            
+
             //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
 
             //if ("AEЁИOYЭЫЯ".IndexOf(tokens[0][tokens[0].Length - 1]) >= 0)
             //{
             //    tokens[0] = tokens[0].Substring(0, tokens[0].Length - 1);
             //}
-            //for (int i = 0; i < tokens.Length; i++)
-            //{
-            //    stringBuilder.Append(tokens[i]);
-            //}
-            return stringBuilder.ToString();
+            for (int i = 0; i < tokens.Length; i++)
+            {
+                stringBuilder.Append($"{tokens[i]} ");
+            }
+            return stringBuilder.ToString().TrimEnd(' ');
         } 
     }
 }

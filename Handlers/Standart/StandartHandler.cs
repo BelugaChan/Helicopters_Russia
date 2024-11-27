@@ -23,21 +23,27 @@ namespace Algo.Handlers.Standart
             this.cosine = cosine;
         }
 
-        public Dictionary<string, List<TStandart>> GroupingStandartsByENS<TStandart>(List<TStandart> standarts) //new feature
+        public Dictionary<string, List<TStandart>> GroupingStandartsByENS<TStandart>(ConcurrentBag<TStandart> standarts) //new feature
             where TStandart : IStandart
         {
             var res = standarts.GroupBy(e => e.ENSClassification).ToDictionary(group => group.Key, group => group.ToList());
             return res;
         }
 
-        public List<TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts, IUpdatedEntityFactory<TStandart> factory)
+        public ConcurrentBag<TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts, IUpdatedEntityFactory<TStandart> factory)
             where TStandart : IStandart
         {
-            var fixedStandarts = new List<TStandart>();
-            foreach (var item in standarts)
+            int currentProgress = 0;
+            var fixedStandarts = new ConcurrentBag<TStandart>();
+            Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
-                fixedStandarts.Add(factory.CreateUpdatedEntity(item.Id, item.Code, eNSHandler.BaseStringHandle(item.Name), item.NTD, item.MaterialNTD, item.ENSClassification));
-            }
+                fixedStandarts.Add(factory.CreateUpdatedEntity(standartItem.Id, standartItem.Code, eNSHandler.BaseStringHandle(standartItem.Name), standartItem.NTD, standartItem.MaterialNTD, standartItem.ENSClassification));
+                currentProgress = Interlocked.Increment(ref currentProgress);
+                if (currentProgress % 10 == 0)
+                {
+                    Console.WriteLine($"HandleStandartNames: {Math.Round((double)currentProgress / standarts.Count * 100,2)}");
+                }
+            });
             return fixedStandarts;
         }
 
@@ -45,15 +51,18 @@ namespace Algo.Handlers.Standart
             where TStandart : IStandart
         {
             var standartDict = new ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>();
+            int currentProgress = 0;
             Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
                 var midDict = new ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>();
                 foreach (var item in standartItem.Value)
                 {
                     var internalDict = new ConcurrentDictionary<string, int>(cosine.GetProfile(item.Name).ToDictionary()); //один обработанный эталон                    
-                    midDict.TryAdd(internalDict, item);                    
+                    midDict.TryAdd(internalDict, item);
                 }
                 standartDict.TryAdd(standartItem.Key, midDict);
+                currentProgress = Interlocked.Increment(ref currentProgress);
+                Console.WriteLine($"HandleStandarts: {Math.Round((double)currentProgress / standarts.Count * 100, 2)}");
             });
             return standartDict;
             /*внешний словарь.
