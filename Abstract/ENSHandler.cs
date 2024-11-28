@@ -17,7 +17,14 @@ namespace Algo.Abstract
         //protected static HashSet<string> stopWords = new HashSet<string> { "СТ", "НА", "И", "ИЗ", "С", "СОДЕРЖ", "ТОЧН", "КЛ", "ШГ", "МЕХОБР", "КАЧ", "Х/Т", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КАЛИБР", "ХОЛ", "ПР", "ПРУЖ", "АВИАЦ", "КОНСТР", "КОНСТРУКЦ", "ПРЕЦИЗ", "СПЛ", "ПРЕСС", "КА4", "ОТВЕТСТВ", "НАЗНА4", "ОЦИНК", "НИК", "БЕЗНИКЕЛ", "ЛЕГИР", "АВТОМАТ", "Г/К", "КОРРОЗИННОСТОЙК", "Н/УГЛЕР", "ПРЕСС", "АЛЮМИН", "СПЛАВОВ" };
 
         //protected static string pattern = @"(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])|(?<=[А-Яа-я])(?=\d)|(?<=\d)(?=[А-Яа-я])";
-        protected static string pattern = @",0{1,3}$";
+        protected static Dictionary<string, string> pattern = new Dictionary<string, string>()
+        {
+            { @",0{1,3}", " " },
+            { @"\.0{1,3}", " " },
+            { @"(?<=\.)\d{1,2}\b", "" },
+            { @"Г(\d+)", "ГOCT $1" }
+        };
+        //protected static string pattern = @",0{1,3}$";
         protected static Dictionary<string, string> replacements = new Dictionary<string, string>
         {
             { "А","A" },
@@ -32,22 +39,33 @@ namespace Algo.Abstract
             { "Т", "T" },
             { "У", "Y" },
             { "Х", "X" },
-            { "OCT1","OCT 1" }
+            { "X/T", "" },
+            { "Г/K", "" },
+            { "В/КА4", "" },
+            { "В/КАЧ", "" },
+            { "OCT1","OCT 1" },
+            {"\r\n", "" }
         };
 
         public abstract string AdditionalStringHandle(string str);
         public virtual string BaseStringHandle(string str) //базовая обработка строк
         {
             StringBuilder stringBuilder = new StringBuilder();
-            
+
+            //string upgradedGost = Regex.Replace(str, @"Г(\d+)", "ГOCT $1");
+
             var fixedStr = str.ToUpper();
-            string result = Regex.Replace(fixedStr, pattern, " ");
+            foreach (var item in pattern)
+            {
+                fixedStr = Regex.Replace(fixedStr, item.Key, item.Value);
+            }
+            //string result = Regex.Replace(fixedStr, pattern, " ");
             foreach (var pair in replacements)
             {
-                result = result.Replace(pair.Key, pair.Value);
+                fixedStr = Regex.Replace(fixedStr, pair.Key, pair.Value);
             }
-            result = result.TrimEnd(',');
-            var tokens = result.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
+            fixedStr = fixedStr.TrimEnd(',');
+            var tokens = fixedStr.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
 
             //нормализация первого слова (приведение его к ед. числу)
             Processor processor = ProcessorService.CreateProcessor();

@@ -55,9 +55,9 @@ namespace Algo.Algotithms
                     string improvedProcessedGarbageName = "";
                     var groupClassificationName = standartGroups.Keys.FirstOrDefault();
                     //switch-case
-                    if (groupClassificationName.Contains("Ленты, широкополосный прокат"))
+                    if (groupClassificationName.Contains("Калиброванные круги, шестигранники, квадраты"))
                     {
-                        SMTHHandler sMTHHandler = (SMTHHandler)eNSHandler;
+                        CalsibCirclesHandler sMTHHandler = (CalsibCirclesHandler)eNSHandler;
                         improvedProcessedGarbageName = sMTHHandler.AdditionalStringHandle(baseProcessedGarbageName);
                     }//другие обработчики   
                     else

@@ -14,7 +14,7 @@ namespace Algo.Handlers.Garbage
         private List<string> resGosts = new List<string>();
         private List<string> patterns = new List<string>() 
         {
-            @"\b(ГОСТ|ОСТ\s*1|ОСТ1)\s*\d{3,5}-\d{2,4}\b"
+            @"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*\d{3,5}-\d{2,4}\b"
             //@"ГОСТ \d{3,4,5}-\d{2,4}",
             //@"ОСТ \d{3,4,5}-\d{2,4}"
             //@"Г\d{3,4,5}-\d{2,4}"
