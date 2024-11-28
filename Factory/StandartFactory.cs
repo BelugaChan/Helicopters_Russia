@@ -13,8 +13,8 @@ namespace Algo.Factory
                 Id = Guid.NewGuid(),
                 Code = row.GetCell(0)?.ToString(),
                 Name = row.GetCell(1)?.ToString(),
-                NTD = row.GetCell(2)?.ToString(),
-                MaterialNTD = row.GetCell(3)?.ToString(),
+                NTD = row.GetCell(2)?.ToString().Replace(" ", ""),
+                MaterialNTD = row.GetCell(3)?.ToString().Replace(" ", ""),
                 ENSClassification = row.GetCell(4)?.ToString()
             };
         }

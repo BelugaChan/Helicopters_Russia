@@ -30,7 +30,7 @@ namespace Algo.Handlers.Garbage
                 {
                     foreach (Match match in matches)
                     {
-                        resGosts.Add(match.Value);
+                        resGosts.Add(match.Value.Replace(" ", ""));
                     }
                 }
             }

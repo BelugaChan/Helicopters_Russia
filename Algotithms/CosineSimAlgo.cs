@@ -39,10 +39,13 @@ namespace Algo.Algotithms
 
             Parallel.ForEach(data, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
+                int commonElementsCount = 0;
                 double similarityCoeff = -1;
                 TStandart? bestStandart = default;
                 var garbageDataItem = item.Keys.FirstOrDefault();
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataItem.ShortName);
+                var tokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                HashSet<int> tokenSet = new HashSet<int>(tokens);
 
                 var standartStuff = item.Values; //сопоставленные группы эталонов для грязной позиции по ГОСТам
                 foreach (var standartGroups in standartStuff) //сравнение грязной строки со всеми позициями каждой из групп, где хотя бы в одном из элементов совпал гост с грязной позицией
@@ -74,6 +77,19 @@ namespace Algo.Algotithms
                         {
                             similarityCoeff = similarity;
                             bestStandart = standart.Values.FirstOrDefault();
+                            var standartTokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                            HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                            commonElementsCount = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
+                        }
+                        else if (similarity == similarityCoeff)
+                        {
+                            var standartTokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                            HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                            int commonElementsCountNow = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
+                            if (commonElementsCountNow > commonElementsCount)
+                            {
+                                bestStandart = standart.Values.FirstOrDefault();
+                            }
                         }
                     }
                 }
@@ -82,7 +98,7 @@ namespace Algo.Algotithms
                 {
                     worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 }
-                else if (similarityCoeff < 0.7)
+                else if (similarityCoeff < 0.6)
                     midBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 else
                     bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
