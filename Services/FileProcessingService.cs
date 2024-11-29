@@ -1,12 +1,13 @@
 ﻿using Algo.Factory;
 using Algo.Interfaces;
 using Algo.Models;
+using Algo.Wrappers;
 using ExcelHandler.Interfaces;
 using Helicopters_Russia;
 using Microsoft.Extensions.Options;
 using Telegram.Bot.Types;
 
-public class FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger<FileProcessingService> logger, IHandle handle)
+public class FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger<FileProcessingService> logger, IAlgoWrapper algoWrapper)
 {
     private string? _dirtyFilePath;
     private string? _cleanFilePath;
@@ -38,11 +39,13 @@ public class FileProcessingService(ISimilarityCalculator similarityCalculator, I
                 standarts = excelReader.CreateCollectionFromExcel<Standart,StandartFactory>(cleanFilePath, new StandartFactory());//need to merge clean files
                 garbageData = excelReader.CreateCollectionFromExcel<GarbageData,GarbageDataFactory>(dirtyFilePath, new GarbageDataFactory());
             });
-            var handledStandarts = handle.HandleStandarts(standarts);
+
+            Pullenti.Sdk.InitializeAll();
+            var res = algoWrapper.AlgoWrap(standarts, garbageData);
 
             // Вычисляем коэффициенты схожести и разделяем на категории
             var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
-                similarityCalculator.CalculateCoefficent<Standart, GarbageData>(handledStandarts, garbageData));            
+                similarityCalculator.CalculateCoefficent(res));
 
             // Записываем результаты в Excel
             await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);            

@@ -14,6 +14,7 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.19.5" />
     <PackageReference Include="NPOI" Version="2.7.1" />
+    <PackageReference Include="Pullenti.Core" Version="4.3.0" />
     <PackageReference Include="Telegram.Bot" Version="22.1.0" />
   </ItemGroup>
 
