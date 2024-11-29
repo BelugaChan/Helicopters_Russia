@@ -2,6 +2,7 @@
 using Algo.Abstract;
 using Algo.Handlers.ENS;
 using Algo.Interfaces;
+using Algo.Interfaces.Handlers;
 using Algo.Models;
 using F23.StringSimilarity;
 using NPOI.SS.Formula.Functions;
@@ -17,14 +18,18 @@ namespace Algo.Algotithms
         //private int shigleLength;
         private Cosine cosine;
         private IENSHandler eNSHandler;
-        public CosineSimAlgo(IENSHandler eNSHandler, Cosine cosine /*int shigleLength = 3*/)
+        private ILumberHandler lumberHandler;
+        ICalsibCirclesHandler calsibCirclesHandler;
+        public CosineSimAlgo(IENSHandler eNSHandler,ILumberHandler lumberHandler, ICalsibCirclesHandler calsibCirclesHandler,Cosine cosine /*int shigleLength = 3*/)
         {
             //this.shigleLength = shigleLength;
             this.cosine = cosine;
             this.eNSHandler = eNSHandler;
+            this.lumberHandler = lumberHandler;
+            this.calsibCirclesHandler = calsibCirclesHandler;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>>> data)
+            (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>>> data)
         {
             currentProgress = 0;
             Dictionary<(TGarbageData, TStandart?), double> worst = new();
@@ -57,40 +62,51 @@ namespace Algo.Algotithms
                     }
                     string improvedProcessedGarbageName = "";
                     var groupClassificationName = standartGroups.Keys.FirstOrDefault();
-                    //switch-case
-                    if (groupClassificationName.Contains("Калиброванные круги, шестигранники, квадраты"))
+                    //персональные обработчики для классификаторов ЕНС
+                    switch (groupClassificationName)
                     {
-                        CalsibCirclesHandler sMTHHandler = (CalsibCirclesHandler)eNSHandler;
-                        improvedProcessedGarbageName = sMTHHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                    }//другие обработчики   
-                    else
-                    {
-                        improvedProcessedGarbageName = baseProcessedGarbageName;
-                    }
-                              
-                    var garbageProfile = cosine.GetProfile(improvedProcessedGarbageName);
-
+                        case string name when name.Contains("Круги, шестигранники, квадраты") ||
+                                              name.Contains("Калиброванные круги, шестигранники, квадраты"):
+                            {
+                                improvedProcessedGarbageName = calsibCirclesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                                break;
+                            }
+                        case string name when name.Contains("Пиломатериалы"):
+                            {       
+                                improvedProcessedGarbageName = lumberHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                                break;
+                            }
+                        default:
+                            {
+                                improvedProcessedGarbageName = baseProcessedGarbageName;
+                                break;
+                            }
+                    } 
                     foreach (var standart in standartGroups.Values) //стандарты в каждой отдельной группе
                     {
-                        var similarity = cosine.Similarity(garbageProfile, standart.Keys.FirstOrDefault());
-                        if (similarity > similarityCoeff)
+                        foreach (var standartItem in standart)
                         {
-                            similarityCoeff = similarity;
-                            bestStandart = standart.Values.FirstOrDefault();
-                            var standartTokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
-                            HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
-                            commonElementsCount = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
-                        }
-                        else if (similarity == similarityCoeff)
-                        {
-                            var standartTokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
-                            HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
-                            int commonElementsCountNow = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
-                            if (commonElementsCountNow > commonElementsCount)
+                            var similarity = cosine.Similarity(improvedProcessedGarbageName/*garbageProfile*/, standartItem.Key);
+                            if (similarity > similarityCoeff)
                             {
-                                bestStandart = standart.Values.FirstOrDefault();
+                                similarityCoeff = similarity;
+                                bestStandart = standartItem.Value;
+                                var standartTokens = standartItem.Key.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                                HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                                commonElementsCount = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
+                            }
+                            else if (similarity == similarityCoeff)
+                            {
+                                var standartTokens = standartItem.Key.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                                HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                                int commonElementsCountNow = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
+                                if (commonElementsCountNow > commonElementsCount)
+                                {
+                                    bestStandart = standartItem.Value;
+                                }
                             }
                         }
+                        
                     }
                 }
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)

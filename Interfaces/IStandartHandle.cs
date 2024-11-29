@@ -10,16 +10,16 @@ namespace Algo.Interfaces
 {
     public interface IStandartHandle
     {
-        ConcurrentBag<TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts, IUpdatedEntityFactory<TStandart> factory)
+        public ConcurrentDictionary<string, TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts)
         where TStandart : IStandart;
 
-        ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> HandleStandarts<TStandart>(Dictionary<string, List<TStandart>> standarts)
-            where TStandart : IStandart;
+        //ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> HandleStandarts<TStandart>(Dictionary<string, List<TStandart>> standarts)
+        //    where TStandart : IStandart;
 
-        Dictionary<string, List<TStandart>> GroupingStandartsByENS<TStandart>(ConcurrentBag<TStandart> standarts)
+        ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>> GroupingStandartsByENS<TStandart>(ConcurrentDictionary<string, TStandart> standarts)
             where TStandart : IStandart;//new feature
 
-        ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> standarts)
+        ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts)
             where TStandart : IStandart;
     }
 }

@@ -9,7 +9,6 @@ namespace Algo.Interfaces
 {
     public interface IENSHandler
     {
-        public abstract string AdditionalStringHandle(string str);
         string BaseStringHandle(string str);
     }
 }

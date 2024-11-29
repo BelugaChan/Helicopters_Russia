@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Abstract
 {
-    public abstract class ENSHandler : IENSHandler
+    public class ENSHandler : IENSHandler
     {
         //protected static HashSet<string> stopWords = new HashSet<string> { "СТ", "НА", "И", "ИЗ", "С", "СОДЕРЖ", "ТОЧН", "КЛ", "ШГ", "МЕХОБР", "КАЧ", "Х/Т", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КАЛИБР", "ХОЛ", "ПР", "ПРУЖ", "АВИАЦ", "КОНСТР", "КОНСТРУКЦ", "ПРЕЦИЗ", "СПЛ", "ПРЕСС", "КА4", "ОТВЕТСТВ", "НАЗНА4", "ОЦИНК", "НИК", "БЕЗНИКЕЛ", "ЛЕГИР", "АВТОМАТ", "Г/К", "КОРРОЗИННОСТОЙК", "Н/УГЛЕР", "ПРЕСС", "АЛЮМИН", "СПЛАВОВ" };
 
@@ -20,8 +20,9 @@ namespace Algo.Abstract
         protected static Dictionary<string, string> pattern = new Dictionary<string, string>()
         {
             { @",0{1,3}", " " },
-            { @"\.0{1,3}", " " },
-            { @"(?<=\.)\d{1,2}\b", "" },
+            { @"\.0{1,3}", " " },// \. - экранирование точки {1,3} - число длиной от 1 до 3 цифр
+            { @"(?<=\.)\d{1,2}\b", "" }, //\d - любое число (digit?)
+            { @"(\d)([a-zA-Zа-яА-Я])|([a-zA-Zа-яА-Я])(\d)", "$1$3 $2$4"},//добавление пробела в следующих случаях буква+цифра или цифра+буква без пробелов. $ означает группы, которые находятся в круглых () скобках
             { @"Г(\d+)", "ГOCT $1" }
         };
         //protected static string pattern = @",0{1,3}$";
@@ -47,14 +48,15 @@ namespace Algo.Abstract
             {"\r\n", "" }
         };
 
-        public abstract string AdditionalStringHandle(string str);
-        public virtual string BaseStringHandle(string str) //базовая обработка строк
+        public string BaseStringHandle(string str) //базовая обработка строк
         {
             StringBuilder stringBuilder = new StringBuilder();
 
             //string upgradedGost = Regex.Replace(str, @"Г(\d+)", "ГOCT $1");
 
             var fixedStr = str.ToUpper();
+
+
             foreach (var item in pattern)
             {
                 fixedStr = Regex.Replace(fixedStr, item.Key, item.Value);
@@ -72,9 +74,14 @@ namespace Algo.Abstract
             AnalysisResult res = processor.Process(new SourceOfAnalysis(str));
             var firstWord = res.FirstToken;
 
-            if (firstWord.Morph.Class.IsNoun)
+            if (firstWord.Morph.Class.IsNoun && firstWord.Morph.Number == MorphNumber.Plural)
             {
-                tokens[0] = firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);
+                var normalizedName = firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);//приведение существительного на первой позиции к единственному числу
+                foreach (var item in replacements)
+                {
+                    fixedStr = Regex.Replace(normalizedName, item.Key, item.Value);
+                }
+                tokens[0] = normalizedName;/*firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);*/
             }
 
             //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();

@@ -24,14 +24,12 @@ namespace Algo.Wrappers
     {
         private IGarbageHandle garbageHandle;
         private IStandartHandle standartHandle;
-        private IUpdatedEntityFactory<TStandart> entityFactory;
-        public AlgoWrapper(IGarbageHandle garbageHandle, IStandartHandle standartHandle, IUpdatedEntityFactory<TStandart> entityFactory)
+        public AlgoWrapper(IGarbageHandle garbageHandle, IStandartHandle standartHandle)
         {
             this.garbageHandle= garbageHandle;
             this.standartHandle= standartHandle;
-            this.entityFactory= entityFactory;
         }
-        public List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>>> AlgoWrap<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData)
+        public List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>> AlgoWrap<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData)
             where TStandart : IStandart
             where TGarbageData : IGarbageData
         {
@@ -47,23 +45,23 @@ namespace Algo.Wrappers
                 gosts.Add(dict);
             }
             Console.WriteLine("Done");
-            var standartsWithHandledNames = standartHandle.HandleStandartNames(standarts, (IUpdatedEntityFactory<TStandart>)entityFactory);
+            var standartsWithHandledNames = standartHandle.HandleStandartNames(standarts);
             var groupedStandartsByEns = standartHandle.GroupingStandartsByENS(standartsWithHandledNames);//абсолютно все стандарты
-            var cosineAlgoHandledStandarts = standartHandle.HandleStandarts(groupedStandartsByEns);//абсолютно все обработанные стандарты\
-            var hehe = new List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>>>();//список грязных данных,которым сопоставлены группы эталонов
+            //var cosineAlgoHandledStandarts = standartHandle.HandleStandarts(groupedStandartsByEns);//абсолютно все обработанные стандарты\
+            var final = new List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>>();//список грязных данных,которым сопоставлены группы эталонов
             int currentProgress = 0;
 
             Parallel.ForEach(gosts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (gostItems, state) =>
             {
-                var res = standartHandle.FindStandartsWhichComparesWithGosts(gostItems.Values.FirstOrDefault(), cosineAlgoHandledStandarts);
-                var midDict = new ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>>();
+                var res = standartHandle.FindStandartsWhichComparesWithGosts(gostItems.Values.FirstOrDefault(), groupedStandartsByEns);
+                var midDict = new ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>();
                 midDict.TryAdd(gostItems.Keys.FirstOrDefault(), res);
-                hehe.Add(midDict);
+                final.Add(midDict);
                 currentProgress = Interlocked.Increment(ref currentProgress);
                 Console.WriteLine($"FindStandartsWhichComparesWithGosts: {Math.Round((double)currentProgress / gosts.Count * 100, 2)}");
             });
 
-            return hehe;
+            return final;
         }
     }
 }

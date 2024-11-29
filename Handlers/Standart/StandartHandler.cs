@@ -23,21 +23,21 @@ namespace Algo.Handlers.Standart
             this.cosine = cosine;
         }
 
-        public Dictionary<string, List<TStandart>> GroupingStandartsByENS<TStandart>(ConcurrentBag<TStandart> standarts) //new feature
+        public ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>> GroupingStandartsByENS<TStandart>(ConcurrentDictionary<string, TStandart> standarts) //new feature
             where TStandart : IStandart
         {
-            var res = standarts.GroupBy(e => e.ENSClassification).ToDictionary(group => group.Key, group => group.ToList());
-            return res;
+            var res = standarts.GroupBy(e => e.Value.ENSClassification).ToDictionary(group => group.Key, group => new ConcurrentDictionary<string, TStandart>(group.ToDictionary(e => e.Key, e => e.Value)));
+            return new ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>(res);
         }
 
-        public ConcurrentBag<TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts, IUpdatedEntityFactory<TStandart> factory)
+        public ConcurrentDictionary<string, TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts)
             where TStandart : IStandart
         {
             int currentProgress = 0;
-            var fixedStandarts = new ConcurrentBag<TStandart>();
+            var fixedStandarts = new ConcurrentDictionary<string, TStandart>();
             Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
-                fixedStandarts.Add(factory.CreateUpdatedEntity(standartItem.Id, standartItem.Code, eNSHandler.BaseStringHandle(standartItem.Name), standartItem.NTD, standartItem.MaterialNTD, standartItem.ENSClassification));
+                fixedStandarts.TryAdd(eNSHandler.BaseStringHandle(standartItem.Name), standartItem);
                 currentProgress = Interlocked.Increment(ref currentProgress);
                 if (currentProgress % 10 == 0)
                 {
@@ -47,33 +47,33 @@ namespace Algo.Handlers.Standart
             return fixedStandarts;
         }
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> HandleStandarts<TStandart>(Dictionary<string, List<TStandart>> standarts)
-            where TStandart : IStandart
-        {
-            var standartDict = new ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>();
-            int currentProgress = 0;
-            Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
-            {
-                var midDict = new ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>();
-                foreach (var item in standartItem.Value)
-                {
-                    var internalDict = new ConcurrentDictionary<string, int>(cosine.GetProfile(item.Name).ToDictionary()); //один обработанный эталон                    
-                    midDict.TryAdd(internalDict, item);
-                }
-                standartDict.TryAdd(standartItem.Key, midDict);
-                currentProgress = Interlocked.Increment(ref currentProgress);
-                Console.WriteLine($"HandleStandarts: {Math.Round((double)currentProgress / standarts.Count * 100, 2)}");
-            });
-            return standartDict;
-            /*внешний словарь.
-             * Ключ - класс, по которым сгруппированы эталоны
-             * Значение - словарь словарей эталонов
-             *срединный словарь.
-             * Ключ - словарь с обработанными словами и частотами встречаемости? (чекнуть библиотеку). Значение - экземпляр класса Standart (добавлен для удобства)
-             */
-        }
+        //public ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> HandleStandarts<TStandart>(ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>> standarts)
+        //    where TStandart : IStandart
+        //{
+        //    var standartDict = new ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>();
+        //    int currentProgress = 0;
+        //    Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
+        //    {
+        //        var midDict = new ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>();
+        //        foreach (var item in standartItem.Value)
+        //        {
+        //            //var internalDict = new ConcurrentDictionary<string, int>(cosine.GetProfile(item.Name).ToDictionary()); //один обработанный эталон                    
+        //            midDict.TryAdd(/*internalDict*/item.Name, item);
+        //        }
+        //        standartDict.TryAdd(standartItem.Key, midDict);
+        //        currentProgress = Interlocked.Increment(ref currentProgress);
+        //        Console.WriteLine($"HandleStandarts: {Math.Round((double)currentProgress / standarts.Count * 100, 2)}");
+        //    });
+        //    return standartDict;
+        //    /*внешний словарь.
+        //     * Ключ - класс, по которым сгруппированы эталоны
+        //     * Значение - словарь словарей эталонов
+        //     *срединный словарь.
+        //     * Ключ - словарь с обработанными словами и частотами встречаемости? (чекнуть библиотеку). Значение - экземпляр класса Standart (добавлен для удобства)
+        //     */
+        //}
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>> standarts)
+        public ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts<TStandart>(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts)
             where TStandart : IStandart
         {
             var filteredData = standarts
@@ -81,7 +81,7 @@ namespace Algo.Handlers.Standart
                     .Any(subCategory => gosts
                         .Any(gostItem => subCategory.Value.NTD.Contains(gostItem) || subCategory.Value.MaterialNTD.Contains(gostItem))));
 
-            return new ConcurrentDictionary<string, ConcurrentDictionary<ConcurrentDictionary<string, int>, TStandart>>(filteredData);
+            return new ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>(filteredData);
 
         }
     }

@@ -1,4 +1,5 @@
 ﻿using Algo.Abstract;
+using Algo.Interfaces.Handlers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,23 +9,19 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class CalsibCirclesHandler : ENSHandler
+    public class CalsibCirclesHandler : ENSHandler, ICalsibCirclesHandler
     {
-        private HashSet<string> stopWords = new HashSet<string> {"БE3HИKEЛ", "COДEPЖ", "KЛ", "KAЛИБP", "ЛEГИP", "OБPAB", "CT", "HA", "TOЧH", "TO4H", "MEXOБP", "KAЧ", "YГЛEP", "COPT", "HEPЖ", "HCPЖ", "KAЛИБP", "KOHCTP", "КОНСТРУКЦ", "KA4", "HAЗHA4", "OЦИHK", "HИK", "ЛEГИP", "ИHCTP"};
+        private HashSet<string> stopWords = new HashSet<string> {"AKБ","БE3HИKEЛ", "COДEPЖ", "KЛ", "KAЛИБP", "ЛEГИP", "OБPAB", "CT", "HA", "TOЧH", "TO4H", "MEXOБP", "KAЧ", "YГЛEP", "COPT", "HEPЖ", "HCPЖ", "KAЛИБP", "KOHCTP", "КОНСТРУКЦ", "KA4", "HAЗHA4", "OЦИHK", "HИK", "ЛEГИP", "ИHCTP"};
 
-        protected static Dictionary<string, string> pattern = new Dictionary<string, string>
-        {
-            { @"ШГ\s?\d{1,2}","ШГ " }
-        };
-
-        protected static Dictionary<string, string> circleReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
             { " KP "," KPYГ " },
-            { " ШГ ", " ШECTИГPAHHИK " }
+            { " ШГ ", " ШECTИГPAHHИK " },
+            { "KPYГ B I", "KPYГ B 1 I"}
         };
 
 
-        public override string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(string str)
         {
             StringBuilder stringBuilder = new StringBuilder();
 
