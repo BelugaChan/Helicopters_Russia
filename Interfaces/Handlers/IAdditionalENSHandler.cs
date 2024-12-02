@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Interfaces.Handlers
 {
-    public interface ILumberHandler
+    public interface IAdditionalENSHandler<T>
     {
         string AdditionalStringHandle(string str);
     }

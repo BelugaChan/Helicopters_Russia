@@ -10,7 +10,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
-namespace Algo.Abstract
+namespace Algo.Handlers.ENS
 {
     public class ENSHandler : IENSHandler
     {
@@ -45,6 +45,7 @@ namespace Algo.Abstract
             { "В/КА4", "" },
             { "В/КАЧ", "" },
             { "OCT1","OCT 1" },
+            { "'", "" },
             {"\r\n", "" }
         };
 
@@ -74,7 +75,7 @@ namespace Algo.Abstract
             AnalysisResult res = processor.Process(new SourceOfAnalysis(str));
             var firstWord = res.FirstToken;
 
-            if (firstWord.Morph.Class.IsNoun && firstWord.Morph.Number == MorphNumber.Plural)
+            if (firstWord.Morph.Class.IsNoun/* && firstWord.Morph.Number == MorphNumber.Plural*/)
             {
                 var normalizedName = firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);//приведение существительного на первой позиции к единственному числу
                 foreach (var item in replacements)
@@ -95,6 +96,6 @@ namespace Algo.Abstract
                 stringBuilder.Append($"{tokens[i]} ");
             }
             return stringBuilder.ToString().TrimEnd(' ');
-        } 
+        }
     }
 }

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class CalsibCirclesHandler : ENSHandler, ICalsibCirclesHandler
+    public class CalsibCirclesHandler : IAdditionalENSHandler<CalsibCirclesHandler>
     {
         private HashSet<string> stopWords = new HashSet<string> {"AKБ","БE3HИKEЛ", "COДEPЖ", "KЛ", "KAЛИБP", "ЛEГИP", "OБPAB", "CT", "HA", "TOЧH", "TO4H", "MEXOБP", "KAЧ", "YГЛEP", "COPT", "HEPЖ", "HCPЖ", "KAЛИБP", "KOHCTP", "КОНСТРУКЦ", "KA4", "HAЗHA4", "OЦИHK", "HИK", "ЛEГИP", "ИHCTP"};
 

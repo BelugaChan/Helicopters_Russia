@@ -10,7 +10,7 @@ namespace Algo.Interfaces
 {
     public interface IStandartHandle
     {
-        public ConcurrentDictionary<string, TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts)
+        public ConcurrentDictionary<string, TStandart> HandleStandartNames<TStandart>(HashSet<TStandart> standarts)
         where TStandart : IStandart;
 
         //ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> HandleStandarts<TStandart>(Dictionary<string, List<TStandart>> standarts)

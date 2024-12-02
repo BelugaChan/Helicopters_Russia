@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class LumberHandler :  ILumberHandler
+    public class LumberHandler :  IAdditionalENSHandler<LumberHandler>
     {
         protected static Dictionary<string, string> lumberReplacements = new Dictionary<string, string>
         {

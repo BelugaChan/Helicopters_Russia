@@ -30,7 +30,7 @@ namespace Algo.Handlers.Standart
             return new ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>(res);
         }
 
-        public ConcurrentDictionary<string, TStandart> HandleStandartNames<TStandart>(List<TStandart> standarts)
+        public ConcurrentDictionary<string, TStandart> HandleStandartNames<TStandart>(HashSet<TStandart> standarts)
             where TStandart : IStandart
         {
             int currentProgress = 0;

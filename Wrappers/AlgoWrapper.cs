@@ -29,7 +29,7 @@ namespace Algo.Wrappers
             this.garbageHandle= garbageHandle;
             this.standartHandle= standartHandle;
         }
-        public List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>> AlgoWrap<TStandart, TGarbageData>(List<TStandart> standarts, List<TGarbageData> garbageData)
+        public (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>>>,ConcurrentDictionary<string,TStandart>) AlgoWrap<TStandart, TGarbageData>(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
             where TStandart : IStandart
             where TGarbageData : IGarbageData
         {
@@ -61,7 +61,7 @@ namespace Algo.Wrappers
                 Console.WriteLine($"FindStandartsWhichComparesWithGosts: {Math.Round((double)currentProgress / gosts.Count * 100, 2)}");
             });
 
-            return final;
+            return (final, standartsWithHandledNames);
         }
     }
 }
