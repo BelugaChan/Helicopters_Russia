@@ -38,8 +38,9 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<FileProcessingService>();
             builder.Services.AddSingleton<UpdateHandler>();
             builder.Services.AddHostedService<BotService>();
-            builder.Services.AddSingleton<ICalsibCirclesHandler, CalsibCirclesHandler>();
-            builder.Services.AddSingleton<ILumberHandler, LumberHandler>();
+            builder.Services.AddSingleton<IAdditionalENSHandler<CalsibCirclesHandler>,CalsibCirclesHandler>();
+            builder.Services.AddSingleton<IAdditionalENSHandler<RopesAndCablesHandler>, RopesAndCablesHandler>();
+            builder.Services.AddSingleton<IAdditionalENSHandler<LumberHandler>, LumberHandler>();
             builder.Services.AddSingleton<IENSHandler, ENSHandler>();
             builder.Services.AddSingleton<IGarbageHandle, GarbageHandler>();
             builder.Services.AddSingleton<IStandartHandle, StandartHandler>();

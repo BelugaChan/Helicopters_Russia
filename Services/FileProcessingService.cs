@@ -1,5 +1,7 @@
 ﻿using Algo.Factory;
+using Algo.Handlers.ENS;
 using Algo.Interfaces;
+using Algo.Interfaces.Handlers;
 using Algo.Models;
 using Algo.Wrappers;
 using ExcelHandler.Interfaces;
@@ -7,7 +9,12 @@ using Helicopters_Russia;
 using Microsoft.Extensions.Options;
 using Telegram.Bot.Types;
 
-public class FileProcessingService(ISimilarityCalculator similarityCalculator, IExcelReader excelReader, IExcelWriter excelWriter, ILogger<FileProcessingService> logger, IAlgoWrapper algoWrapper)
+public class FileProcessingService(
+    ISimilarityCalculator similarityCalculator, 
+    IExcelReader excelReader, 
+    IExcelWriter excelWriter, 
+    ILogger<FileProcessingService> logger, 
+    IAlgoWrapper algoWrapper)
 {
     private string? _dirtyFilePath;
     private string? _cleanFilePath;
@@ -26,8 +33,8 @@ public class FileProcessingService(ISimilarityCalculator similarityCalculator, I
 
     private async Task<string> RunProcessingAlgorithm(string dirtyFilePath, string cleanFilePath)
     {
-        List<Standart> standarts = new();
-        List<GarbageData> garbageData = new();
+        HashSet<Standart> standarts = new();
+        HashSet<GarbageData> garbageData = new();
 
         // Создаём путь для сохранения результата
         var resultFilePath = Path.Combine("Data", "Result.xlsx");
@@ -41,11 +48,11 @@ public class FileProcessingService(ISimilarityCalculator similarityCalculator, I
             });
 
             Pullenti.Sdk.InitializeAll();
-            var res = algoWrapper.AlgoWrap(standarts, garbageData);
+            var (res, additional) = algoWrapper.AlgoWrap(standarts, garbageData);
 
             // Вычисляем коэффициенты схожести и разделяем на категории
             var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
-                similarityCalculator.CalculateCoefficent(res));
+                similarityCalculator.CalculateCoefficent(res,additional));
 
             // Записываем результаты в Excel
             await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);            
