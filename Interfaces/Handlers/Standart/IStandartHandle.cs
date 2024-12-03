@@ -18,7 +18,7 @@ namespace Algo.Interfaces.Handlers.Standart
 
         ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>> GroupingStandartsByENS(ConcurrentDictionary<string, TStandart> standarts);
 
-        ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts);
+        ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts(HashSet<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts);
 
     }
 }

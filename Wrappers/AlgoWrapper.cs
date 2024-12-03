@@ -37,17 +37,17 @@ namespace Algo.Wrappers
         public (List<ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>>>, ConcurrentDictionary<string, TStandart>) AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
         {
             //Pullenti.Sdk.InitializeAll();
-            List<Dictionary<(string, TGarbageData), List<string>>> gosts = new List<Dictionary<(string, TGarbageData), List<string>>>();
+            List<Dictionary<(string, TGarbageData), HashSet<string>>> gosts = new List<Dictionary<(string, TGarbageData), HashSet<string>>>();
             Console.WriteLine("Starting getting gosts from dirty data");
             foreach (var item in garbageData)
             {
                 var itemGosts = gostHandle.GetGOSTFromGarbageName(item.ShortName);
-                var copyItems = new List<string>(itemGosts);
+                var copyItems = new HashSet<string>(itemGosts);
                 //удаление ГОСТов из грязной опзиции
                 var garbageNameWithoutGosts = gostRemove.RemoveGosts(item.ShortName, itemGosts);
                 var upgradedItemGosts = gostHandle.GostsPostProcessor(copyItems);
-                var copyUpgradedItems = new List<string>(upgradedItemGosts);
-                var dict = new Dictionary<(string, TGarbageData), List<string>>
+                var copyUpgradedItems = new HashSet<string>(upgradedItemGosts);
+                var dict = new Dictionary<(string, TGarbageData), HashSet<string>>
                 {
                     { (garbageNameWithoutGosts,item)/*item*/, copyUpgradedItems }
                 };

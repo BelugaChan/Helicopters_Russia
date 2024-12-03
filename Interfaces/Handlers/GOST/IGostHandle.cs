@@ -8,8 +8,8 @@ namespace Algo.Interfaces.Handlers.GOST
 {
     public interface IGostHandle
     {
-        List<string> GetGOSTFromGarbageName(string name);
+        HashSet<string> GetGOSTFromGarbageName(string name);
 
-        List<string> GostsPostProcessor(List<string> gosts);
+        HashSet<string> GostsPostProcessor(HashSet<string> gosts);
     }
 }

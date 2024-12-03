@@ -4,7 +4,7 @@ namespace Algo.Handlers.GOST
 {
     public class GostRemover : IGostRemove
     {
-        public string RemoveGosts(string positionName, List<string> gosts)
+        public string RemoveGosts(string positionName, HashSet<string> gosts)
         {
             foreach (var gost in gosts)
             {
