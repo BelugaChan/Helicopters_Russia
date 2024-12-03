@@ -6,10 +6,10 @@ namespace Algo.Handlers.Garbage
 {
     public class GostHandler : IGostHandle
     {
-        private List<string> resGosts = new List<string>();
+        private HashSet<string> resGosts = new HashSet<string>();
         private List<string> patterns = new List<string>() 
         {
-            @"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",
+            @"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",//добавить (?<![a-zA-Z])(\d+)? в начало
             @"\bТУ\s*[a-zA-Zа-яА-Я]*\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*\b",
             @"\bСТО\s*\d{1,9}-\d{1,5}-\d{1,5}\b",
             @"\bЕТУ\s*\d{1,5}",
@@ -18,7 +18,7 @@ namespace Algo.Handlers.Garbage
             //@"ОСТ \d{3,4,5}-\d{2,4}"
             //@"Г\d{3,4,5}-\d{2,4}"
         };
-        public List<string> GetGOSTFromGarbageName(string name)
+        public HashSet<string> GetGOSTFromGarbageName(string name)
         {
             resGosts.Clear();
             var fixedName = name.ToUpper();
@@ -43,7 +43,7 @@ namespace Algo.Handlers.Garbage
             return resGosts;
         }
 
-        public List<string> GostsPostProcessor(List<string> gosts)
+        public HashSet<string> GostsPostProcessor(HashSet<string> gosts)
         {
             resGosts.Clear();
             foreach (var gost in gosts)

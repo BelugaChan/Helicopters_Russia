@@ -40,11 +40,11 @@ namespace Algo.Handlers.Standart
         {
             int currentProgress = 0;
             var fixedStandarts = new ConcurrentDictionary<string, TStandart>();
-            Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = 1/*Environment.ProcessorCount*/ }, (standartItem, state) =>
+            Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
                 //удаление гостов из эталона
-                var gosts = new List<string>() {standartItem.MaterialNTD, standartItem.NTD}
-                .Where(item => !string.IsNullOrEmpty(item) && item.Length > 0).ToList();
+                var gosts = new HashSet<string>() {standartItem.MaterialNTD, standartItem.NTD}
+                .Where(item => !string.IsNullOrEmpty(item) && item.Length > 0).ToHashSet();
                 var itemNameWithRemovedGosts = gostRemove.RemoveGosts(standartItem.Name, gosts);
 
                 fixedStandarts.TryAdd(eNSHandler.BaseStringHandle(/*standartItem.Name*/itemNameWithRemovedGosts), 
@@ -91,7 +91,7 @@ namespace Algo.Handlers.Standart
         //     */
         //}
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts(List<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts)
+        public ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts(HashSet<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts)
         {
             var filteredData = standarts
                 .Where(category => category.Value
