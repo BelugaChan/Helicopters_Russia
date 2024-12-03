@@ -4,7 +4,9 @@ using Algo.Factory;
 using Algo.Handlers.ENS;
 using Algo.Handlers.Garbage;
 using Algo.Handlers.Standart;
-using Algo.Interfaces;
+using Algo.Interfaces.Handlers.GOST;
+using Algo.Interfaces.Handlers.Standart;
+using Algo.Interfaces.Wrappers;
 using Algo.Models;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Readers;
@@ -19,42 +21,49 @@ using System.Threading.Tasks;
 
 namespace Algo.Wrappers
 {
-    public class AlgoWrapper<TStandart> : IAlgoWrapper
+    public class AlgoWrapper<TStandart, TGarbageData> : IAlgoWrapper<TStandart, TGarbageData>
         where TStandart : IStandart
+        where TGarbageData : IGarbageData
     {
-        private IGarbageHandle garbageHandle;
-        private IStandartHandle standartHandle;
-        public AlgoWrapper(IGarbageHandle garbageHandle, IStandartHandle standartHandle)
+        private IGostHandle gostHandle;
+        private IStandartHandle<TStandart> standartHandle;
+        private IGostRemove gostRemove;
+        public AlgoWrapper(IGostHandle gostHandle, IStandartHandle<TStandart> standartHandle, IGostRemove gostRemove)
         {
-            this.garbageHandle= garbageHandle;
-            this.standartHandle= standartHandle;
+            this.gostHandle = gostHandle;
+            this.standartHandle = standartHandle;
+            this.gostRemove = gostRemove;
         }
-        public (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>>>,ConcurrentDictionary<string,TStandart>) AlgoWrap<TStandart, TGarbageData>(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
-            where TStandart : IStandart
-            where TGarbageData : IGarbageData
+        public (List<ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>>>, ConcurrentDictionary<string, TStandart>) AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
         {
             //Pullenti.Sdk.InitializeAll();
-            List<Dictionary<TGarbageData, List<string>>> gosts = new List<Dictionary<TGarbageData, List<string>>>();
+            List<Dictionary<(string, TGarbageData), List<string>>> gosts = new List<Dictionary<(string, TGarbageData), List<string>>>();
             Console.WriteLine("Starting getting gosts from dirty data");
             foreach (var item in garbageData)
             {
-                var itemGosts = garbageHandle.GetGOSTFromGarbageName(item.ShortName);
+                var itemGosts = gostHandle.GetGOSTFromGarbageName(item.ShortName);
                 var copyItems = new List<string>(itemGosts);
-                var dict = new Dictionary<TGarbageData, List<string>>();
-                dict.Add(item, copyItems);
+                //удаление ГОСТов из грязной опзиции
+                var garbageNameWithoutGosts = gostRemove.RemoveGosts(item.ShortName, itemGosts);
+                var upgradedItemGosts = gostHandle.GostsPostProcessor(copyItems);
+                var copyUpgradedItems = new List<string>(upgradedItemGosts);
+                var dict = new Dictionary<(string, TGarbageData), List<string>>
+                {
+                    { (garbageNameWithoutGosts,item)/*item*/, copyUpgradedItems }
+                };
                 gosts.Add(dict);
             }
             Console.WriteLine("Done");
             var standartsWithHandledNames = standartHandle.HandleStandartNames(standarts);
             var groupedStandartsByEns = standartHandle.GroupingStandartsByENS(standartsWithHandledNames);//абсолютно все стандарты
             //var cosineAlgoHandledStandarts = standartHandle.HandleStandarts(groupedStandartsByEns);//абсолютно все обработанные стандарты\
-            var final = new List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>>();//список грязных данных,которым сопоставлены группы эталонов
+            var final = new List<ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>>();//список грязных данных,которым сопоставлены группы эталонов
             int currentProgress = 0;
 
             Parallel.ForEach(gosts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (gostItems, state) =>
             {
                 var res = standartHandle.FindStandartsWhichComparesWithGosts(gostItems.Values.FirstOrDefault(), groupedStandartsByEns);
-                var midDict = new ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>();
+                var midDict = new ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>>>();
                 midDict.TryAdd(gostItems.Keys.FirstOrDefault(), res);
                 final.Add(midDict);
                 currentProgress = Interlocked.Increment(ref currentProgress);

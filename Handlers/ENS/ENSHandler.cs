@@ -1,5 +1,5 @@
 ﻿using Abstractions.Interfaces;
-using Algo.Interfaces;
+using Algo.Interfaces.Handlers.ENS;
 using MathNet.Numerics.Statistics;
 using Pullenti.Morph;
 using Pullenti.Ner;
@@ -23,7 +23,8 @@ namespace Algo.Handlers.ENS
             { @"\.0{1,3}", " " },// \. - экранирование точки {1,3} - число длиной от 1 до 3 цифр
             { @"(?<=\.)\d{1,2}\b", "" }, //\d - любое число (digit?)
             { @"(\d)([a-zA-Zа-яА-Я])|([a-zA-Zа-яА-Я])(\d)", "$1$3 $2$4"},//добавление пробела в следующих случаях буква+цифра или цифра+буква без пробелов. $ означает группы, которые находятся в круглых () скобках
-            { @"Г(\d+)", "ГOCT $1" }
+            //{ @"Г(\d+)", "ГOCT $1" }
+            //{ @"Г\d+-\d+-\d+-\d+", @"ТУ\d+-\d+-\d+-\d+" }
         };
         //protected static string pattern = @",0{1,3}$";
         protected static Dictionary<string, string> replacements = new Dictionary<string, string>
@@ -44,7 +45,7 @@ namespace Algo.Handlers.ENS
             { "Г/K", "" },
             { "В/КА4", "" },
             { "В/КАЧ", "" },
-            { "OCT1","OCT 1" },
+            //{ "OCT1","OCT 1" },
             { "'", "" },
             {"\r\n", "" }
         };

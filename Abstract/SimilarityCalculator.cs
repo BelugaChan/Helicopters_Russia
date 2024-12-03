@@ -1,5 +1,5 @@
 ﻿using Abstractions.Interfaces;
-using Algo.Interfaces;
+using Algo.Interfaces.Algorithms;
 using Algo.Models;
 using System;
 using System.Collections.Concurrent;
@@ -39,7 +39,7 @@ namespace Algo.Abstract
         //};
 
         public abstract (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>>> data, ConcurrentDictionary<string, TStandart> standarts)
+            (List<ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>>> data, ConcurrentDictionary<string, TStandart> standarts)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
 

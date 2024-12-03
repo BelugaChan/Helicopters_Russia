@@ -1,5 +1,5 @@
 ﻿using Algo.Abstract;
-using Algo.Interfaces.Handlers;
+using Algo.Interfaces.Handlers.ENS;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +11,7 @@ namespace Algo.Handlers.ENS
 {
     public class CalsibCirclesHandler : IAdditionalENSHandler<CalsibCirclesHandler>
     {
-        private HashSet<string> stopWords = new HashSet<string> {"AKБ","БE3HИKEЛ", "COДEPЖ", "KЛ", "KAЛИБP", "ЛEГИP", "OБPAB", "CT", "HA", "TOЧH", "TO4H", "MEXOБP", "KAЧ", "YГЛEP", "COPT", "HEPЖ", "HCPЖ", "KAЛИБP", "KOHCTP", "КОНСТРУКЦ", "KA4", "HAЗHA4", "OЦИHK", "HИK", "ЛEГИP", "ИHCTP"};
+        private HashSet<string> stopWords = new HashSet<string> {"AKБ","БE3HИKEЛ", "COДEPЖ", "KЛ", "KAЛИБP", "ЛEГИP", "OБPAB", "CT", "HA", "TOЧH", "TO 4H", "MEXOБP", "KAЧ", "YГЛEP", "COPT", "HEPЖ", "HCPЖ", "KAЛИБP", "KOHCTP", "КОНСТРУКЦ", "KA4", "HAЗHA4", "OЦИHK", "HИK", "ЛEГИP", "ИHCTP"};
 
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {

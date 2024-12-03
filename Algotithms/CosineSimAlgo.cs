@@ -1,8 +1,8 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Abstract;
 using Algo.Handlers.ENS;
-using Algo.Interfaces;
-using Algo.Interfaces.Handlers;
+using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.Handlers.GOST;
 using Algo.Models;
 using F23.StringSimilarity;
 using NPOI.SS.Formula.Functions;
@@ -21,11 +21,13 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<LumberHandler> lumberHandler;
         private IAdditionalENSHandler<CalsibCirclesHandler> calsibCirclesHandler;
         private IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler;
+        private IGostRemove gostRemove;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
             IAdditionalENSHandler<CalsibCirclesHandler> calsibCirclesHandler, 
             IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler,
+            IGostRemove gostRemove,
             Cosine cosine)
         {
             this.cosine = cosine;
@@ -33,9 +35,10 @@ namespace Algo.Algotithms
             this.lumberHandler = lumberHandler;
             this.calsibCirclesHandler = calsibCirclesHandler;
             this.ropesAndCablesHandler = ropesAndCablesHandler;
+            this.gostRemove = gostRemove;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<ConcurrentDictionary<TGarbageData, ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>>> data, ConcurrentDictionary<string, TStandart> standarts)
+            (List<ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>>> data, ConcurrentDictionary<string, TStandart> standarts)
         {
             currentProgress = 0;          
             Dictionary<(TGarbageData, TStandart?), double> worst = new();
@@ -53,8 +56,8 @@ namespace Algo.Algotithms
                 int commonElementsCount = 0;
                 double similarityCoeff = -1;
                 
-                var garbageDataItem = item.Keys.FirstOrDefault();
-                string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataItem.ShortName);
+                var (garbageDataHandeledName, garbageDataItem) = item.Keys.FirstOrDefault();
+                string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName/*garbageDataItem.ShortName*/);
                 var tokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
                 HashSet<int> tokenSet = new HashSet<int>(tokens);
                 string improvedProcessedGarbageName = "";

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Algo.Interfaces.Handlers
+namespace Algo.Interfaces.Handlers.ENS
 {
     public interface IAdditionalENSHandler<T>
     {

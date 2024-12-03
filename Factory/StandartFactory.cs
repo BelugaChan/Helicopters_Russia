@@ -4,7 +4,7 @@ using NPOI.SS.UserModel;
 
 namespace Algo.Factory
 {
-    public class StandartFactory : IUpdatedEntityFactory<Standart>
+    public class StandartFactory : IUpdatedEntityFactoryStandart<Standart>
     {
         public Standart CreateFromRow(IRow row)
         {
@@ -13,8 +13,8 @@ namespace Algo.Factory
                 Id = Guid.NewGuid(),
                 Code = row.GetCell(0)?.ToString(),
                 Name = row.GetCell(1)?.ToString(),
-                NTD = row.GetCell(2)?.ToString().Replace(" ", ""),
-                MaterialNTD = row.GetCell(3)?.ToString().Replace(" ", ""),
+                NTD = row.GetCell(2)?.ToString()/*.Replace(" ", "")*/,
+                MaterialNTD = row.GetCell(3)?.ToString()/*.Replace(" ", "")*/,
                 ENSClassification = row.GetCell(4)?.ToString()
             };
         }
