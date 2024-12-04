@@ -17,7 +17,7 @@ namespace Algo.Handlers.ENS
         {
             StringBuilder stringBuilder = new StringBuilder();
 
-            var tokens = str.Split(new[] { ' ', '/', '.',',' }, StringSplitOptions.RemoveEmptyEntries);
+            var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
 
             var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
             for (int i = 0; i < filteredTokens.Count; i++)

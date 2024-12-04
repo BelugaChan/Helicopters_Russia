@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
@@ -12,14 +13,17 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Проволока
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> { "СЕРЕБР", "СТ", "ПРУЖ", "УГЛЕР", "2АКЛ", "КАЧ", "ОТВЕТСТВ", "НАЗНАЧ", "ОЦИНК", "НЕРЖ", "ХОЛОДНО", "ТЯНУТАЯ"};
+        private HashSet<string> stopWords = new HashSet<string> {"ПРЕЦИЗ", "ИЗ","СПЛ", "ЭЛЕКТР", "СОПР", "ВЫСОКИМ", "СЕРЕБР", "СТ", "ПРУЖ", "УГЛЕР", "КАЧ", "ОТВЕТСТВ", "НАЗНАЧ", "ОЦИНК", "НЕРЖ", "ХОЛОДНО", "ТЯНУТАЯ", "ММ"};
         private Dictionary<string, string> wireReplacements = new Dictionary<string, string>
         {
-            {"ПР", "ПРОВОЛКА" },
-            {"Х/Т", "" },
-            {"Н/", "" },
+            {" С ", " " },
+            {"2 АКЛ ", ""},
             { "(", "" },
             { ")", "" }
+        };
+        private Dictionary<string, string> regexReplacements = new Dictionary<string, string>
+        {
+            {"ПР", "ПРОВОЛОКА" }
         };
         public string AdditionalStringHandle(string str)
         {
@@ -30,7 +34,12 @@ namespace Algo.Handlers.ENS
                 str = str.Replace(pair.Key, pair.Value);
             }
 
-            var tokens = str.Split(new[] { ' ', '/', '.', ',' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var pair in regexReplacements)
+            {
+                str = Regex.Replace(str, $@"\b{Regex.Escape(pair.Key)}\b", pair.Value, RegexOptions.IgnoreCase);
+            }
+
+            var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
 
             var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
             for (int i = 0; i < filteredTokens.Count; i++)
