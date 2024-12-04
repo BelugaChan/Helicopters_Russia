@@ -21,12 +21,14 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<LumberHandler> lumberHandler;
         private IAdditionalENSHandler<CalsibCirclesHandler> calsibCirclesHandler;
         private IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler;
+        private IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler;
         private IGostRemove gostRemove;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
             IAdditionalENSHandler<CalsibCirclesHandler> calsibCirclesHandler, 
             IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler,
+            IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler,
             IGostRemove gostRemove,
             Cosine cosine)
         {
@@ -35,6 +37,7 @@ namespace Algo.Algotithms
             this.lumberHandler = lumberHandler;
             this.calsibCirclesHandler = calsibCirclesHandler;
             this.ropesAndCablesHandler = ropesAndCablesHandler;
+            this.mountingWiresHandler = mountingWiresHandler;
             this.gostRemove = gostRemove;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
@@ -89,6 +92,11 @@ namespace Algo.Algotithms
                         case string name when name.Contains("Канаты, Тросы"):
                             {
                                 improvedProcessedGarbageName = ropesAndCablesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                                break;
+                            }
+                        case string name when name.Contains("Провода монтажные"):
+                            {
+                                improvedProcessedGarbageName = mountingWiresHandler.AdditionalStringHandle(baseProcessedGarbageName);
                                 break;
                             }
                         default:

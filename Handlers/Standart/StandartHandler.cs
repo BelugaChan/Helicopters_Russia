@@ -91,14 +91,14 @@ namespace Algo.Handlers.Standart
         //     */
         //}
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> FindStandartsWhichComparesWithGosts(HashSet<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string/*ConcurrentDictionary<string, int>*/, TStandart>> standarts)
+        public ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>> FindStandartsWhichComparesWithGosts(HashSet<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>> standarts)
         {
             var filteredData = standarts
                 .Where(category => category.Value
                     .Any(subCategory => gosts
                         .Any(gostItem => subCategory.Value.NTD.Contains(gostItem) || subCategory.Value.MaterialNTD.Contains(gostItem))));
 
-            return new ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>(filteredData);
+            return new ConcurrentDictionary<string, ConcurrentDictionary<string, TStandart>>(filteredData);
 
         }
     }

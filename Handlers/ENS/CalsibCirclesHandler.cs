@@ -11,13 +11,16 @@ namespace Algo.Handlers.ENS
 {
     public class CalsibCirclesHandler : IAdditionalENSHandler<CalsibCirclesHandler>
     {
-        private HashSet<string> stopWords = new HashSet<string> {"AKБ","БE3HИKEЛ", "COДEPЖ", "KЛ", "KAЛИБP", "ЛEГИP", "OБPAB", "CT", "HA", "TOЧH", "TO 4H", "MEXOБP", "KAЧ", "YГЛEP", "COPT", "HEPЖ", "HCPЖ", "KAЛИБP", "KOHCTP", "КОНСТРУКЦ", "KA4", "HAЗHA4", "OЦИHK", "HИK", "ЛEГИP", "ИHCTP"};
+        /// <summary>
+        /// Калиброванные круги, шестигранники, квадраты
+        /// </summary>
+        private HashSet<string> stopWords = new HashSet<string> {"АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
 
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
-            { " KP "," KPYГ " },
-            { " ШГ ", " ШECTИГPAHHИK " },
-            { "KPYГ B I", "KPYГ B 1 I"}
+            { " КР "," КРУГ " },
+            { " ШГ ", " ШЕСТИГРАННИК " },
+            { "КРУГ В I", "КРУГ В 1 I"}
         };
 
 

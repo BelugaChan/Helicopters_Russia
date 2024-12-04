@@ -10,10 +10,13 @@ namespace Algo.Handlers.ENS
 {
     public class LumberHandler :  IAdditionalENSHandler<LumberHandler>
     {
+        /// <summary>
+        /// Пиломатериалы
+        /// </summary>
         protected static Dictionary<string, string> lumberReplacements = new Dictionary<string, string>
         {
-            { "XBOЙH","XB" },
-            { "XBOЙHЫЙ","XB" },
+            { "ХВОЙН","ХВ" },
+            { "ХВОЙНЫЙ","ХВ" },
         };
         public string AdditionalStringHandle(string str)
         {
