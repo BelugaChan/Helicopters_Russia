@@ -9,14 +9,12 @@ namespace Algo.Handlers.Garbage
         private HashSet<string> resGosts = new HashSet<string>();
         private List<string> patterns = new List<string>() 
         {
-            @"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",//добавить (?<![a-zA-Z])(\d+)? в начало
-            @"\bТУ\s*[a-zA-Zа-яА-Я]*\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*\b",
+            /*@"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",*///добавить (?<![a-zA-Z])(\d+)? в начало
+            @"\b(?:\/?\s*-?\s*)?(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{1,5}(?:[-\d]{1,5})+(?:\/?\s*)?\b",
+            @"\b(?:\/?\s*)?ТУ\s*[a-zA-Zа-яА-Я]*\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*(?:\/?\s*)?\b",
             @"\bСТО\s*\d{1,9}-\d{1,5}-\d{1,5}\b",
             @"\bЕТУ\s*\d{1,5}",
             @"(?<!\s)ГОСТ\s?\d{4}-\d{2}"
-            //@"ГОСТ \d{3,4,5}-\d{2,4}",
-            //@"ОСТ \d{3,4,5}-\d{2,4}"
-            //@"Г\d{3,4,5}-\d{2,4}"
         };
         public HashSet<string> GetGOSTFromGarbageName(string name)
         {
@@ -30,7 +28,7 @@ namespace Algo.Handlers.Garbage
                 {
                     foreach (Match match in matches)
                     {
-                        resGosts.Add(match.Value);
+                        resGosts.Add(match.Value.Replace("/",""));
                         //замена Г на ГОСТ
                         //string res = Regex.Replace(match.Value, @"Г\s*\d", match =>
                         //{

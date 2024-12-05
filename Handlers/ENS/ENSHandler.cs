@@ -14,16 +14,14 @@ namespace Algo.Handlers.ENS
 {
     public class ENSHandler : IENSHandler
     {
-        //protected static string pattern = @"(?<=[A-Za-z])(?=\d)|(?<=\d)(?=[A-Za-z])|(?<=[А-Яа-я])(?=\d)|(?<=\d)(?=[А-Яа-я])";
         protected static Dictionary<string, string> pattern = new Dictionary<string, string>()
         {
             { @",0{1,3}", " " },
             { @"\.0{1,3}", " " },// \. - экранирование точки {1,3} - число длиной от 1 до 3 цифр
             { @"\b0[.,](\d+)\b", "$1" },
-            { @"\b(\d+)[.,]\d+\b", "$1" },            
-            { @"(\d)([a-zA-Zа-яА-Я])|([a-zA-Zа-яА-Я])(\d)", "$1$3 $2$4"},//добавление пробела в следующих случаях буква+цифра или цифра+буква без пробелов. $ означает группы, которые находятся в круглых () скобках
-            //{ @"Г(\d+)", "ГOCT $1" }
-            //{ @"Г\d+-\d+-\d+-\d+", @"ТУ\d+-\d+-\d+-\d+" }
+            { @"\b(\d+)[.,]\d+\b", "$1" },
+            /*{ @"(\d)([a-zA-Zа-яА-Я])|([a-zA-Zа-яА-Я])(\d)", "$1$3 $2$4"}*/
+            { @"(?<=[a-zA-Zа-яА-Я])(?=\d)|(?<=\d)(?=[a-zA-Zа-яА-Я])", " "},//добавление пробела в следующих случаях буква+цифра или цифра+буква без пробелов. $ означает группы, которые находятся в круглых () скобках
         };
         protected static Dictionary<string, string> replacements = new Dictionary<string, string>
         {
@@ -39,12 +37,18 @@ namespace Algo.Handlers.ENS
             { "T","Т" },
             { "Y","У" },
             { "X","Х" },
-            { "4", "Ч"},
-            { "3", "З"},
             { "Х/Т", "" },
             { "Г/К", "" },
-            { "В/КАЧ", "" },
+            { "В/КА4", "" },
+            { "НАЗНА4", "" },
+            { "НА3НА4", ""},
+            { "КА4", ""},
+            { "ТО4Н", "" },
+            { "2АКЛ", "" },
+            { "5КЛ", ""},
+            { "БЕ3НИКЕЛ", ""},
             {"Н/УГЛЕР", "" },
+            { "В/КАЧ", "" },
             { "'", "" },
             {"\r\n", "" }
         };
@@ -52,8 +56,6 @@ namespace Algo.Handlers.ENS
         public string BaseStringHandle(string str) //базовая обработка строк
         {
             StringBuilder stringBuilder = new StringBuilder();
-
-            //string upgradedGost = Regex.Replace(str, @"Г(\d+)", "ГOCT $1");
 
             var fixedStr = str.ToUpper();
 
@@ -68,7 +70,7 @@ namespace Algo.Handlers.ENS
             }
             
             fixedStr = fixedStr.TrimEnd(',').Replace(',','.');
-            var tokens = fixedStr.Split(new[] { ' ', '.', '/', '-' }, StringSplitOptions.RemoveEmptyEntries);
+            var tokens = fixedStr.Split(new[] { ' ', '.', '-','/' }, StringSplitOptions.RemoveEmptyEntries);
 
             //нормализация первого слова (приведение его к ед. числу)
             Processor processor = ProcessorService.CreateProcessor();
@@ -85,12 +87,6 @@ namespace Algo.Handlers.ENS
                 tokens[0] = normalizedName;/*firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);*/
             }
 
-            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-
-            //if ("AEЁИOYЭЫЯ".IndexOf(tokens[0][tokens[0].Length - 1]) >= 0)
-            //{
-            //    tokens[0] = tokens[0].Substring(0, tokens[0].Length - 1);
-            //}
             for (int i = 0; i < tokens.Length; i++)
             {
                 stringBuilder.Append($"{tokens[i]} ");

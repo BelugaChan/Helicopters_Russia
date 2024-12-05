@@ -17,6 +17,8 @@ namespace Algo.Handlers.ENS
         private Dictionary<string, string> wireReplacements = new Dictionary<string, string>
         {
             {" С ", " " },
+            {"КА Ч ", "" },
+            {"НАЗНА ч ", "" },
             {"2 АКЛ ", ""},
             { "(", "" },
             { ")", "" }
