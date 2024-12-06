@@ -23,7 +23,6 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler;
         private IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler;
         private IAdditionalENSHandler<WireHandler> wireHandler;
-        private IGostRemove gostRemove;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
@@ -31,7 +30,6 @@ namespace Algo.Algotithms
             IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler,
             IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler,
             IAdditionalENSHandler<WireHandler> wireHandler,
-            IGostRemove gostRemove,
             Cosine cosine)
         {
             this.cosine = cosine;
@@ -41,30 +39,37 @@ namespace Algo.Algotithms
             this.ropesAndCablesHandler = ropesAndCablesHandler;
             this.mountingWiresHandler = mountingWiresHandler;
             this.wireHandler = wireHandler;
-            this.gostRemove = gostRemove;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<ConcurrentDictionary<(string, TGarbageData), ConcurrentDictionary<string, ConcurrentDictionary</*ConcurrentDictionary<string, int>*/string, TStandart>>>> data, ConcurrentDictionary<string, TStandart> standarts)
+            (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<TGarbageData> garbageDataWithoutComparedStandarts)
         {
             currentProgress = 0;          
             Dictionary<(TGarbageData, TStandart?), double> worst = new();
             Dictionary<(TGarbageData, TStandart?), double> mid = new();
             Dictionary<(TGarbageData, TStandart?), double> best = new();
 
-            ConcurrentDictionary<string, TGarbageData> dataForPostProcessing = new();
+            ConcurrentDictionary<TGarbageData, string> dataForPostProcessing = new();
             ConcurrentDictionary<(TGarbageData, TStandart?), double> worstBag = new();
             ConcurrentDictionary<(TGarbageData, TStandart?), double> midBag = new();
             ConcurrentDictionary<(TGarbageData, TStandart?), double> bestBag = new();
-
+           
             Parallel.ForEach(data, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 TStandart? bestStandart = default;
                 int commonElementsCount = 0;
                 double similarityCoeff = -1;
                 
-                var (garbageDataHandeledName, garbageDataItem) = item.Keys.FirstOrDefault();
+                var (garbageDataHandeledName, garbageDataItem, garbageDateGosts) = item.Keys.FirstOrDefault();
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName/*garbageDataItem.ShortName*/);
-                var tokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                var tokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                foreach (var gost in garbageDateGosts)
+                {
+                    var gostTokens = gost.Split(new char[] {' ', '-'}).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                    foreach (var gostToken in gostTokens)
+                    {
+                        tokens.Add(gostToken); //добавление в список токенов всех чисел из ГОСТов, найденных для данной грязной позиции.
+                    }
+                }
                 HashSet<int> tokenSet = new HashSet<int>(tokens);
                 string improvedProcessedGarbageName = "";
                 var standartStuff = item.Values; //сопоставленные группы эталонов для грязной позиции по ГОСТам
@@ -72,11 +77,11 @@ namespace Algo.Algotithms
                 {
                     if (standartGroups.Count == 0)//null reference!!!!
                     {
-                        dataForPostProcessing.TryAdd(baseProcessedGarbageName, garbageDataItem);
+                        dataForPostProcessing.TryAdd(garbageDataItem, baseProcessedGarbageName);
                         //worstBag.TryAdd((garbageDataItem, bestStandart), 0);
                         break;
                     }
-                    
+
                     var groupClassificationName = standartGroups.Keys.FirstOrDefault();
                     //персональные обработчики для классификаторов ЕНС
                     switch (groupClassificationName)
@@ -117,23 +122,41 @@ namespace Algo.Algotithms
                     {
                         foreach (var standartItem in standart)
                         {
-                            var similarity = cosine.Similarity(improvedProcessedGarbageName/*garbageProfile*/, standartItem.Key);
+                            var similarity = cosine.Similarity(improvedProcessedGarbageName/*garbageProfile*/, standartItem.Value);
                             if (similarity > similarityCoeff)
                             {
                                 similarityCoeff = similarity;
-                                bestStandart = standartItem.Value;
-                                var standartTokens = standartItem.Key.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                                bestStandart = standartItem.Key;
+                                var standartTokens = standartItem.Value.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                var standartGosts = new HashSet<string>() {standartItem.Key.MaterialNTD, standartItem.Key.NTD };
+                                foreach (var handledGost in standartGosts)
+                                {
+                                    var handledGostTokens = handledGost.Split(new char[] {' ', '-'}).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                    foreach (var handledToken in handledGostTokens)
+                                    {
+                                        standartTokens.Add(handledToken);
+                                    }
+                                }
                                 HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
                                 commonElementsCount = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
                             }
                             else if (similarity == similarityCoeff)
                             {
-                                var standartTokens = standartItem.Key.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToArray();
+                                var standartTokens = standartItem.Value.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                var standartGosts = new HashSet<string>() { standartItem.Key.MaterialNTD, standartItem.Key.NTD };
+                                foreach (var handledGost in standartGosts)
+                                {
+                                    var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                    foreach (var handledToken in handledGostTokens)
+                                    {
+                                        standartTokens.Add(handledToken);
+                                    }
+                                }
                                 HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
                                 int commonElementsCountNow = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
                                 if (commonElementsCountNow > commonElementsCount)
                                 {
-                                    bestStandart = standartItem.Value;
+                                    bestStandart = standartItem.Key;
                                 }
                             }
                         }
@@ -143,7 +166,7 @@ namespace Algo.Algotithms
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
                 if (similarityCoeff < 0.05)
                 {
-                    dataForPostProcessing.TryAdd(improvedProcessedGarbageName, garbageDataItem);
+                    dataForPostProcessing.TryAdd(garbageDataItem, improvedProcessedGarbageName);
                     //worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 }
                 else if (similarityCoeff < 0.6)
@@ -157,14 +180,18 @@ namespace Algo.Algotithms
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });
             currentProgress = 0;
-            //дополнительный прогон по позициям с наихудшим сопоставлением
+            Parallel.ForEach(garbageDataWithoutComparedStandarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
+            {
+                dataForPostProcessing.TryAdd(item, eNSHandler.BaseStringHandle(item.ShortName));
+            });
+            //дополнительный прогон по позициям с для которых не были найдены подходящие стандарты
             Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 TStandart? bestStandart = default;
                 double similarityCoeff = -1;
-                var garbageName = item.Key;
-                var garbageDataItem = item.Value;
-                foreach (var (standartName,standart) in standarts)
+                var garbageName = item.Value;
+                var garbageDataItem = item.Key;
+                foreach (var (standart, standartName) in standarts)
                 {
                     double coeff = cosine.Similarity(garbageName, standartName);
                     if (coeff > similarityCoeff)
