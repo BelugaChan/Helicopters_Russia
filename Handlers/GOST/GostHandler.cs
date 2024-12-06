@@ -20,7 +20,7 @@ namespace Algo.Handlers.Garbage
         {
             resGosts.Clear();
             var fixedName = name.ToUpper();
-                                
+            var res = "";                    
             foreach (var pattern in patterns)
             {
                 var matches = Regex.Matches(fixedName, pattern);
@@ -28,13 +28,17 @@ namespace Algo.Handlers.Garbage
                 {
                     foreach (Match match in matches)
                     {
-                        resGosts.Add(match.Value.Replace("/",""));
-                        //замена Г на ГОСТ
-                        //string res = Regex.Replace(match.Value, @"Г\s*\d", match =>
-                        //{
-                        //    return match.Value.Replace("Г","ГОСТ");
-                        //});
-                        //resGosts.Add(res.Replace(" ", "").TrimEnd('/').TrimEnd(','));
+                        res = match.Value;
+                        //resGosts.Add(match.Value.Replace("/",""));
+                        if (res.Length > 0 && !char.IsLetter(res[0]))
+                        {
+                            res = res.Substring(1);
+                        }
+                        if (res.Length > 0 && !char.IsDigit(res[^1]))
+                        {
+                            res = res.Substring(0, res.Length - 1);
+                        }
+                        resGosts.Add(res);
                     }
                 }
             }
@@ -61,6 +65,20 @@ namespace Algo.Handlers.Garbage
                 resGosts.Add(res.Replace(" ", "").TrimEnd('/').TrimEnd(','));
             }
             return resGosts;
+        }
+
+        public HashSet<string> RemoveLettersAndOtherSymbolsFromGosts(HashSet<string> gosts)
+        {
+            var res = new HashSet<string>();
+            foreach (var item in gosts)
+            {
+                if (item.Length > 0)
+                {
+                    var withoutLetters = Regex.Replace(item, @"\p{L}", "");
+                    res.Add(withoutLetters.Replace(".","").Replace("-","").Replace("/","").Replace(" ",""));
+                }               
+            }
+            return res;
         }
     }
 }

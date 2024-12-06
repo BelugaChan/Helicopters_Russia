@@ -1,14 +1,8 @@
-﻿using Abstractions.Interfaces;
-using Algo.Interfaces.Handlers.ENS;
-using MathNet.Numerics.Statistics;
+﻿using Algo.Interfaces.Handlers.ENS;
 using Pullenti.Morph;
 using Pullenti.Ner;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
