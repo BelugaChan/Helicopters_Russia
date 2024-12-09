@@ -23,6 +23,12 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler;
         private IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler;
         private IAdditionalENSHandler<WireHandler> wireHandler;
+        private IAdditionalENSHandler<BarsAndTiresHandler> barsHandler;
+        private IAdditionalENSHandler<PipesHandler> pipesHandler;
+        private IAdditionalENSHandler<WashersHandler> washersHandler;
+        private IAdditionalENSHandler<RodHandler> rodsHandler;
+        private IAdditionalENSHandler<ScrewsHandler> screwsHandler;
+        private IAdditionalENSHandler<SoldersHandler> soldersHandler;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
@@ -30,6 +36,12 @@ namespace Algo.Algotithms
             IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler,
             IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler,
             IAdditionalENSHandler<WireHandler> wireHandler,
+            IAdditionalENSHandler<BarsAndTiresHandler> barsHandler,
+            IAdditionalENSHandler <PipesHandler> pipesHandler,
+            IAdditionalENSHandler<WashersHandler> washersHandler,
+            IAdditionalENSHandler<RodHandler> rodsHandler,
+            IAdditionalENSHandler<ScrewsHandler> screwsHandler,
+            IAdditionalENSHandler<SoldersHandler> soldersHandler,
             Cosine cosine)
         {
             this.cosine = cosine;
@@ -39,6 +51,12 @@ namespace Algo.Algotithms
             this.ropesAndCablesHandler = ropesAndCablesHandler;
             this.mountingWiresHandler = mountingWiresHandler;
             this.wireHandler = wireHandler;
+            this.barsHandler = barsHandler;
+            this.pipesHandler = pipesHandler;
+            this.washersHandler = washersHandler;
+            this.rodsHandler = rodsHandler;
+            this.screwsHandler = screwsHandler;
+            this.soldersHandler = soldersHandler;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
             (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<TGarbageData> garbageDataWithoutComparedStandarts)
@@ -59,10 +77,10 @@ namespace Algo.Algotithms
                 int commonElementsCount = 0;
                 double similarityCoeff = -1;
                 
-                var (garbageDataHandeledName, garbageDataItem, garbageDateGosts) = item.Keys.FirstOrDefault();
+                var (garbageDataHandeledName, garbageDataItem, garbageDataGosts) = item.Keys.FirstOrDefault();
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName/*garbageDataItem.ShortName*/);
                 var tokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
-                foreach (var gost in garbageDateGosts)
+                foreach (var gost in garbageDataGosts)
                 {
                     var gostTokens = gost.Split(new char[] {' ', '-'}).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
                     foreach (var gostToken in gostTokens)
@@ -88,35 +106,75 @@ namespace Algo.Algotithms
                     {
                         case string name when name.Contains("Круги, шестигранники, квадраты") ||
                                               name.Contains("Калиброванные круги, шестигранники, квадраты"):
-                            {
-                                improvedProcessedGarbageName = calsibCirclesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                                break;
-                            }
+                        {
+                            improvedProcessedGarbageName = calsibCirclesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
                         case string name when name.Contains("Пиломатериалы"):
-                            {       
-                                improvedProcessedGarbageName = lumberHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                                break;
-                            }
+                        {       
+                            improvedProcessedGarbageName = lumberHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
                         case string name when name.Contains("Канаты, Тросы"):
-                            {
-                                improvedProcessedGarbageName = ropesAndCablesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                                break;
-                            }
+                        {
+                            improvedProcessedGarbageName = ropesAndCablesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
                         case string name when name.Contains("Провода монтажные"):
-                            {
-                                improvedProcessedGarbageName = mountingWiresHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                                break;
-                            }
+                        {
+                            improvedProcessedGarbageName = mountingWiresHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
                         case string name when name.Contains("Проволока"):
-                            {
-                                improvedProcessedGarbageName = wireHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                                break;
-                            }
+                        {
+                            improvedProcessedGarbageName = wireHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
+                        case string name when name.Contains("Прутки из титана и сплавов")
+                                           || name.Contains("Прутки, шины из алюминия и сплавов")
+                                           || name.Contains("Прутки, шины из меди и сплавов"):
+                        {
+                            improvedProcessedGarbageName = barsHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
+                        case string name when name.Contains("Трубы бесшовные")
+                                           || name.Contains("Трубы сварные")
+                                           || name.Contains("Трубы, трубки из алюминия и сплавов")
+                                           || name.Contains("Трубы, трубки из меди и сплавов"):
+                        {
+                            improvedProcessedGarbageName = pipesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
+                        case string name when name.Contains("Шайбы"):
+                        {
+                            improvedProcessedGarbageName = washersHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
+                        case string name when name.Contains("Катанка, проволока из меди и сплавов"): //need to fix
+                        {
+                            improvedProcessedGarbageName = baseProcessedGarbageName;
+                            break;
+                        }
+                        case string name when name.Contains("Катанка, проволока"):
+                        {
+                            improvedProcessedGarbageName = rodsHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
+                        case string name when name.Contains("Шурупы"):
+                        {
+                            improvedProcessedGarbageName = screwsHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
+                        case string name when name.Contains("Припои (прутки, проволока, трубки)"):
+                        {
+                            improvedProcessedGarbageName = soldersHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                            break;
+                        }
                         default:
-                            {
-                                improvedProcessedGarbageName = baseProcessedGarbageName;
-                                break;
-                            }
+                        {
+                            improvedProcessedGarbageName = baseProcessedGarbageName;
+                            break;
+                        }
                     } 
                     foreach (var standart in standartGroups.Values) //стандарты в каждой отдельной группе
                     {
@@ -211,7 +269,7 @@ namespace Algo.Algotithms
                     bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 if (currentProgress % 100 == 0)
                 {
-                    Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count,2)}%");
+                    Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count,2) * 100}%");
                 }
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });

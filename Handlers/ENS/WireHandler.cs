@@ -9,7 +9,7 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Проволока
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> {"ПРЕЦИЗ", "ИЗ","СПЛ", "ЭЛЕКТР", "СОПР", "ВЫСОКИМ", "СЕРЕБР", "СТ", "ПРУЖ", "УГЛЕР", "КАЧ", "ОТВЕТСТВ", "НАЗНАЧ", "ОЦИНК", "НЕРЖ", "ХОЛОДНО", "ТЯНУТАЯ", "ММ"};
+        private HashSet<string> stopWords = new HashSet<string> {"ОЛОВО","ПРЕЦИЗ", "ИЗ","СПЛ", "ЭЛЕКТР", "СОПР", "ВЫСОКИМ", "СЕРЕБР", "СТ", "ПРУЖ", "УГЛЕР", "КАЧ", "ОТВЕТСТВ", "НАЗНАЧ", "ОЦИНК", "НЕРЖ", "ХОЛОДНО", "ТЯНУТАЯ"};
         private Dictionary<string, string> wireReplacements = new Dictionary<string, string>
         {
             {" С ", " " },
@@ -21,7 +21,8 @@ namespace Algo.Handlers.ENS
         };
         private Dictionary<string, string> regexReplacements = new Dictionary<string, string>
         {
-            {"ПР", "ПРОВОЛОКА" }
+            {"ПР", "ПРОВОЛОКА" },
+            {"ПРВ", "ПРОВОЛОКА" }
         };
         public string AdditionalStringHandle(string str)
         {

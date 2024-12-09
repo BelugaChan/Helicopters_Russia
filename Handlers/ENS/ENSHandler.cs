@@ -31,6 +31,7 @@ namespace Algo.Handlers.ENS
             { "T","Т" },
             { "Y","У" },
             { "X","Х" },
+            { "*", "Х" },
             { "Х/Т", "" },
             { "Г/К", "" },
             { "В/КА4", "" },
@@ -55,7 +56,7 @@ namespace Algo.Handlers.ENS
 
             foreach (var pair in replacements)
             {
-                fixedStr = Regex.Replace(fixedStr, pair.Key, pair.Value);
+                fixedStr = fixedStr.Replace(pair.Key, pair.Value);
             }
 
             foreach (var item in pattern)
@@ -76,7 +77,7 @@ namespace Algo.Handlers.ENS
                 var normalizedName = firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);//приведение существительного на первой позиции к единственному числу
                 foreach (var item in replacements)
                 {
-                    fixedStr = Regex.Replace(normalizedName, item.Key, item.Value);
+                    fixedStr = fixedStr.Replace(item.Key, item.Value);
                 }
                 tokens[0] = normalizedName;/*firstWord.GetNormalCaseText(MorphClass.Noun, MorphNumber.Singular);*/
             }

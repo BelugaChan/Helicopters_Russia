@@ -6,11 +6,12 @@ namespace Algo.Handlers.GOST
     {
         public string RemoveGosts(string positionName, HashSet<string> gosts)
         {
+            var upperStr = positionName.ToUpper();
             foreach (var gost in gosts)
             {
-                positionName = positionName.Replace(gost, "");
+                upperStr = upperStr.Replace(gost, "");
             }        
-            return positionName;
+            return upperStr;
         }
     }
 }

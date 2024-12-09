@@ -3,15 +3,25 @@ using System.Text;
 
 namespace Algo.Handlers.ENS
 {
-    public class RopesAndCablesHandler : IAdditionalENSHandler<RopesAndCablesHandler>
+    public class ScrewsHandler : IAdditionalENSHandler<ScrewsHandler>
     {
         /// <summary>
-        /// Канаты, Тросы
+        /// Шурупы
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> {"СТ","АВИАЦ","КОНСТР", "ТИПА","ТК" };
+
+        private HashSet<string> stopWords = new HashSet<string> { "С", "ПОТАЙНОЙ", "ГОЛОВКОЙ", "БЕЗ", "ПОКРЫТИЯ" };
+        protected static Dictionary<string, string> screwsReplacements = new Dictionary<string, string>
+        {
+            { "БЕ 3 ","" }
+        };
         public string AdditionalStringHandle(string str)
         {
             StringBuilder stringBuilder = new StringBuilder();
+
+            foreach (var pair in screwsReplacements)
+            {
+                str = str.Replace(pair.Key, pair.Value);
+            }
 
             var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
 

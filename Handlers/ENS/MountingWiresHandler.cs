@@ -1,12 +1,12 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 
 namespace Algo.Handlers.ENS
-{
-    /// <summary>
-    /// Провода монтажные
-    /// </summary>
+{   
     public class MountingWiresHandler : IAdditionalENSHandler<MountingWiresHandler>
     {
+        /// <summary>
+        /// Провода монтажные
+        /// </summary>
         private Dictionary<string, string> wiresReplacements = new Dictionary<string, string>
         {
             { "КАБЕЛЬ","ПРОВОД" }
