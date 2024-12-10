@@ -16,7 +16,7 @@ namespace Algo.Handlers.Garbage
             @"\bЕТУ\s*\d{1,5}",
             @"(?<!\s)ГОСТ\s?\d{4}-\d{2}"
         };
-        public HashSet<string> GetGOSTFromGarbageName(string name)
+        public HashSet<string> GetGOSTFromPositionName(string name)
         {
             resGosts.Clear();
             var fixedName = name.ToUpper();

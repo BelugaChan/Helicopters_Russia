@@ -8,7 +8,7 @@ namespace Algo.Interfaces.Algorithms
     {
 
         (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<TGarbageData> garbageDataWithoutComparedStandarts)
+            (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<(TGarbageData, HashSet<string>)> garbageDataWithoutComparedStandarts)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
 

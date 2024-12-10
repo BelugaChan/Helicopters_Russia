@@ -34,11 +34,16 @@ namespace Algo.Handlers.Standart
             Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
                 //удаление гостов из эталона
-                var gosts = new HashSet<string>() {standartItem.MaterialNTD, standartItem.NTD}
+                var gosts = new HashSet<string>() { standartItem.MaterialNTD, standartItem.NTD }
                 .Where(item => !string.IsNullOrEmpty(item) && item.Length > 0).ToHashSet();
                 //удаление букв и др. символов из ГОСТ
                 var handledGost = gostHandle.RemoveLettersAndOtherSymbolsFromGosts(gosts).ToArray();
-                var itemNameWithRemovedGosts = gostRemove.RemoveGosts(standartItem.Name, gosts);
+
+                //так как в приоритете ГОСТы из столбцов то их обрабатываем и добавляем в обновлённый экземпляр класса Standart. Для удаления гостов из наименования эталона не используем значения из столбцов, а как и с грязными данными через Regex ищем подстроки и удаляем их.
+                var itemGosts = gostHandle.GetGOSTFromPositionName(standartItem.Name);
+                var copyItems = new HashSet<string>(itemGosts);               
+                var itemNameWithRemovedGosts = gostRemove.RemoveGosts(standartItem.Name, copyItems);
+
 
                 fixedStandarts.TryAdd(
                     updatedEntityFactoryStandart.CreateUpdatedEntity(

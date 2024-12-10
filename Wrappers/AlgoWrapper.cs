@@ -19,15 +19,15 @@ namespace Algo.Wrappers
             this.standartHandle = standartHandle;
             this.gostRemove = gostRemove;
         }
-        public (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>>, ConcurrentDictionary<TStandart, string>, ConcurrentBag<TGarbageData>) AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
+        public (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>>, ConcurrentDictionary<TStandart, string>, ConcurrentBag<(TGarbageData,HashSet<string>)>) AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
         {
             //Pullenti.Sdk.InitializeAll();
-            ConcurrentBag<TGarbageData> garbageDataWWithNoComparedStandartGroups = new();
+            ConcurrentBag<(TGarbageData,HashSet<string>)> garbageDataWWithNoComparedStandartGroups = new();
             List<Dictionary<(string, TGarbageData), HashSet<string>>> gosts = new List<Dictionary<(string, TGarbageData), HashSet<string>>>();
             Console.WriteLine("Starting getting gosts from dirty data");
             foreach (var item in garbageData)
             {
-                var itemGosts = gostHandle.GetGOSTFromGarbageName(item.ShortName);
+                var itemGosts = gostHandle.GetGOSTFromPositionName(item.ShortName);
                 var copyItems = new HashSet<string>(itemGosts);
                 //удаление ГОСТов из грязной опзиции
                 var garbageNameWithoutGosts = gostRemove.RemoveGosts(item.ShortName, itemGosts);
@@ -56,16 +56,18 @@ namespace Algo.Wrappers
 
                 var (name, garbageData) = gostItems.Keys.FirstOrDefault();
 
+                currentProgress = Interlocked.Increment(ref currentProgress);
+
                 if (!res.Any())
                 {
                     Console.WriteLine("No standarts!");
-                    garbageDataWWithNoComparedStandartGroups.Add(garbageData);
+                    garbageDataWWithNoComparedStandartGroups.Add((garbageData, gost));
+                    return;
                 }
                                 
                 var midDict = new ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>();
                 midDict.TryAdd((name,garbageData, gost), res);
-                final.Add(midDict);
-                currentProgress = Interlocked.Increment(ref currentProgress);
+                final.Add(midDict);          
                 Console.WriteLine($"FindStandartsWhichComparesWithGosts: {Math.Round((double)currentProgress / gosts.Count * 100, 2)}");
             });
 

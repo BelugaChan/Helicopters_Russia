@@ -13,6 +13,6 @@ namespace Algo.Interfaces.Wrappers
         where TStandart : IStandart
         where TGarbageData : IGarbageData
     {
-        (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>>, ConcurrentDictionary<TStandart, string>, ConcurrentBag<TGarbageData>) AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData);
+        (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>>, ConcurrentDictionary<TStandart, string>, ConcurrentBag<(TGarbageData, HashSet<string>)>) AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData);
     }
 }
