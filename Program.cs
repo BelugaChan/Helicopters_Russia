@@ -58,6 +58,7 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<IAdditionalENSHandler<RodHandler>, RodHandler>();
             builder.Services.AddSingleton<IAdditionalENSHandler<ScrewsHandler>, ScrewsHandler>();
             builder.Services.AddSingleton<IAdditionalENSHandler<SoldersHandler>, SoldersHandler>();
+            builder.Services.AddSingleton<IAdditionalENSHandler<NailsHandler>, NailsHandler>();
             builder.Services.AddSingleton<IGostHandle, GostHandler>();
             builder.Services.AddSingleton<IGostRemove, GostRemover>();
             builder.Services.AddSingleton<IStandartHandle<Standart>, StandartHandler<Standart>>();
