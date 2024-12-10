@@ -6,7 +6,7 @@ namespace Algo.Handlers.Garbage
 {
     public class GostHandler : IGostHandle
     {
-        private HashSet<string> resGosts = new HashSet<string>();
+        //private HashSet<string> resGosts = new HashSet<string>();
         private List<string> patterns = new List<string>() 
         {
             /*@"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",*///добавить (?<![a-zA-Z])(\d+)? в начало
@@ -18,9 +18,9 @@ namespace Algo.Handlers.Garbage
         };
         public HashSet<string> GetGOSTFromPositionName(string name)
         {
-            resGosts.Clear();
+            var res = new HashSet<string>();
             var fixedName = name.ToUpper();
-            var res = "";                    
+            var resStr = "";                    
             foreach (var pattern in patterns)
             {
                 var matches = Regex.Matches(fixedName, pattern);
@@ -28,26 +28,27 @@ namespace Algo.Handlers.Garbage
                 {
                     foreach (Match match in matches)
                     {
-                        res = match.Value;
+                        resStr = match.Value;
                         //resGosts.Add(match.Value.Replace("/",""));
-                        if (res.Length > 0 && !char.IsLetter(res[0]))
+                        if (resStr.Length > 0 && !char.IsLetter(resStr[0]))
                         {
-                            res = res.Substring(1);
+                            resStr = resStr.Substring(1);
                         }
-                        if (res.Length > 0 && !char.IsDigit(res[^1]))
+                        if (resStr.Length > 0 && !char.IsDigit(resStr[^1]))
                         {
-                            res = res.Substring(0, res.Length - 1);
+                            resStr = resStr.Substring(0, resStr.Length - 1);
                         }
-                        resGosts.Add(res);
+                        res.Add(resStr);
                     }
                 }
             }
-            return resGosts;
+            return res;
         }
 
         public HashSet<string> GostsPostProcessor(HashSet<string> gosts)
         {
-            resGosts.Clear();
+            //resGosts.Clear();
+            var res = new HashSet<string>();
             foreach (var gost in gosts)
             {
                 string tyPatternFirst = @"Г\d+-\d+-\d+-\d+";
@@ -58,13 +59,13 @@ namespace Algo.Handlers.Garbage
                 });
                 string resultSecond = Regex.Replace(resultFirst, tyPatternSecond, "$1$2-$3");
 
-                string res = Regex.Replace(gost, @"Г\s*\d", match =>
+                string resStr = Regex.Replace(gost, @"Г\s*\d", match =>
                 {
                     return match.Value.Replace("Г", "ГОСТ");
                 });
-                resGosts.Add(res.Replace(" ", "").TrimEnd('/').TrimEnd(','));
+                res.Add(resStr.Replace(" ", "").TrimEnd('/').TrimEnd(','));
             }
-            return resGosts;
+            return res;
         }
 
         public HashSet<string> RemoveLettersAndOtherSymbolsFromGosts(HashSet<string> gosts)

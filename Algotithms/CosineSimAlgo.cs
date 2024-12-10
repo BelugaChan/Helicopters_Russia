@@ -30,6 +30,7 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<RodHandler> rodsHandler;
         private IAdditionalENSHandler<ScrewsHandler> screwsHandler;
         private IAdditionalENSHandler<SoldersHandler> soldersHandler;
+        private IAdditionalENSHandler<NailsHandler> nailsHandler;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
@@ -43,6 +44,7 @@ namespace Algo.Algotithms
             IAdditionalENSHandler<RodHandler> rodsHandler,
             IAdditionalENSHandler<ScrewsHandler> screwsHandler,
             IAdditionalENSHandler<SoldersHandler> soldersHandler,
+            IAdditionalENSHandler<NailsHandler> nailsHandler,
             Cosine cosine)
         {
             this.cosine = cosine;
@@ -58,6 +60,7 @@ namespace Algo.Algotithms
             this.rodsHandler = rodsHandler;
             this.screwsHandler = screwsHandler;
             this.soldersHandler = soldersHandler;
+            this.nailsHandler = nailsHandler;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
             (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<(TGarbageData,HashSet<string>)> garbageDataWithoutComparedStandarts)
@@ -294,6 +297,11 @@ namespace Algo.Algotithms
                 case string name when name.Contains("Припои (прутки, проволока, трубки)"):
                     {
                         improvedProcessedGarbageName = soldersHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                        break;
+                    }
+                case string name when name.Contains("Гвозди, Дюбели"):
+                    {
+                        improvedProcessedGarbageName = nailsHandler.AdditionalStringHandle(baseProcessedGarbageName);
                         break;
                     }
                 default:
