@@ -1,7 +1,10 @@
-﻿using Algo.Factory;
+﻿using Abstractions.Interfaces;
+using Algo.Factory;
 using Algo.Handlers.ENS;
 using Algo.Interfaces;
+using Algo.Interfaces.Algorithms;
 using Algo.Interfaces.Handlers;
+using Algo.Interfaces.Wrappers;
 using Algo.Models;
 using Algo.Wrappers;
 using ExcelHandler.Interfaces;
@@ -14,7 +17,7 @@ public class FileProcessingService(
     IExcelReader excelReader, 
     IExcelWriter excelWriter, 
     ILogger<FileProcessingService> logger, 
-    IAlgoWrapper algoWrapper)
+    IAlgoWrapper<Standart,GarbageData> algoWrapper)
 {
     private string? _dirtyFilePath;
     private string? _cleanFilePath;
@@ -39,23 +42,24 @@ public class FileProcessingService(
         // Создаём путь для сохранения результата
         var resultFilePath = Path.Combine("Data", "Result.xlsx");
         try
-        {            
+        {
             // Считываем данные из "чистого" и "грязного" файлов
             await Task.Run(() => //выделение отдельного потока для функций CreateCollectionFromExcel. Основной поток может выполнять другие действия, пока не завершится считывание файлов
             {
                 standarts = excelReader.CreateCollectionFromExcel<Standart,StandartFactory>(cleanFilePath, new StandartFactory());//need to merge clean files
-                garbageData = excelReader.CreateCollectionFromExcel<GarbageData,GarbageDataFactory>(dirtyFilePath, new GarbageDataFactory());
+                garbageData = excelReader.CreateCollectionFromExcel<GarbageData, GarbageDataFactory>(dirtyFilePath, new GarbageDataFactory());
             });
+            
 
             Pullenti.Sdk.InitializeAll();
-            var (res, additional) = algoWrapper.AlgoWrap(standarts, garbageData);
+            var (res, additional, garbageWithNoStandarts) = algoWrapper.AlgoWrap(standarts, garbageData);
 
             // Вычисляем коэффициенты схожести и разделяем на категории
             var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
-                similarityCalculator.CalculateCoefficent(res,additional));
+                similarityCalculator.CalculateCoefficent(res, additional, garbageWithNoStandarts));
 
-            // Записываем результаты в Excel
-            await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);            
+            //Записываем результаты в Excel
+            await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);
         }
         catch (Exception ex)
         {
