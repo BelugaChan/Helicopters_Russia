@@ -32,6 +32,9 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<SoldersHandler> soldersHandler;
         private IAdditionalENSHandler<NailsHandler> nailsHandler;
         private IAdditionalENSHandler<TapesHandler> tapesHandler;
+        private IAdditionalENSHandler<CirclesHandler> circlesHandler;
+        private IAdditionalENSHandler<ConnectionPartsHandler> connectionPartsHandler;
+        private IAdditionalENSHandler<SheetsAndPlatesHandler> sheetsAndPlatesHandler;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
@@ -47,6 +50,9 @@ namespace Algo.Algotithms
             IAdditionalENSHandler<SoldersHandler> soldersHandler,
             IAdditionalENSHandler<NailsHandler> nailsHandler,
             IAdditionalENSHandler<TapesHandler> tapesHandler,
+            IAdditionalENSHandler<CirclesHandler> circlesHandler,
+            IAdditionalENSHandler<ConnectionPartsHandler> connectionPartsHandler,
+            IAdditionalENSHandler<SheetsAndPlatesHandler> sheetsAndPlatesHandler,
             Cosine cosine)
         {
             this.cosine = cosine;
@@ -64,6 +70,9 @@ namespace Algo.Algotithms
             this.soldersHandler = soldersHandler;
             this.nailsHandler = nailsHandler;
             this.tapesHandler = tapesHandler;
+            this.circlesHandler = circlesHandler;
+            this.connectionPartsHandler = connectionPartsHandler;
+            this.sheetsAndPlatesHandler = sheetsAndPlatesHandler;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
             (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<(TGarbageData,HashSet<string>)> garbageDataWithoutComparedStandarts)
@@ -86,16 +95,16 @@ namespace Algo.Algotithms
                 
                 var (garbageDataHandeledName, garbageDataItem, garbageDataGosts) = item.Keys.FirstOrDefault();
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName/*garbageDataItem.ShortName*/);
-                var tokens = baseProcessedGarbageName.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                var tokens = baseProcessedGarbageName.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                 foreach (var gost in garbageDataGosts)
                 {
-                    var gostTokens = gost.Split(new char[] {' ', '-'}).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                    var gostTokens = gost.Split(new char[] {' ', '-'}).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                     foreach (var gostToken in gostTokens)
                     {
                         tokens.Add(gostToken); //добавление в список токенов всех чисел из ГОСТов, найденных для данной грязной позиции.
                     }
                 }
-                HashSet<int> tokenSet = new HashSet<int>(tokens);
+                //HashSet<int> tokenSet = new HashSet<int>(tokens);
                 string improvedProcessedGarbageName = "";
                 var standartStuff = item.Values; //сопоставленные группы эталонов для грязной позиции по ГОСТам
                 foreach (var standartGroups in standartStuff) //сравнение грязной строки со всеми позициями каждой из групп, где хотя бы в одном из элементов совпал гост с грязной позицией
@@ -119,33 +128,33 @@ namespace Algo.Algotithms
                             {
                                 similarityCoeff = similarity;
                                 bestStandart = standartItem.Key;
-                                var standartTokens = standartItem.Value.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                var standartTokens = standartItem.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                                 var standartGosts = new HashSet<string>() {standartItem.Key.MaterialNTD, standartItem.Key.NTD };
                                 foreach (var handledGost in standartGosts)
                                 {
-                                    var handledGostTokens = handledGost.Split(new char[] {' ', '-'}).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                    var handledGostTokens = handledGost.Split(new char[] {' ', '-'}).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                                     foreach (var handledToken in handledGostTokens)
                                     {
                                         standartTokens.Add(handledToken);
                                     }
                                 }
-                                HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
-                                commonElementsCount = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
+                                //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                                commonElementsCount = standartTokens.Where(tokens.Contains).ToArray().Length;
                             }
                             else if (similarity == similarityCoeff)
                             {
-                                var standartTokens = standartItem.Value.Split().Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                var standartTokens = standartItem.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                                 var standartGosts = new HashSet<string>() { standartItem.Key.MaterialNTD, standartItem.Key.NTD };
                                 foreach (var handledGost in standartGosts)
                                 {
-                                    var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => int.TryParse(s, out _)).Select(int.Parse).ToList();
+                                    var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                                     foreach (var handledToken in handledGostTokens)
                                     {
                                         standartTokens.Add(handledToken);
                                     }
                                 }
-                                HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
-                                int commonElementsCountNow = standartTokenSet.Where(tokenSet.Contains).ToArray().Length;
+                                //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                                int commonElementsCountNow = standartTokens.Where(tokens.Contains).ToArray().Length;
                                 if (commonElementsCountNow > commonElementsCount)
                                 {
                                     bestStandart = standartItem.Key;
@@ -207,7 +216,7 @@ namespace Algo.Algotithms
                     else
                         bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 }               
-                if (currentProgress % 100 == 0)
+                if (currentProgress % 10 == 0)
                 {
                     Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count,2) * 100}%");
                 }
@@ -236,8 +245,12 @@ namespace Algo.Algotithms
         {
             switch (groupClassificationName)
             {
-                case string name when name.Contains("Круги, шестигранники, квадраты") ||
-                                      name.Contains("Калиброванные круги, шестигранники, квадраты"):
+                case string name when name.Contains("Круги, шестигранники, квадраты"):
+                    {
+                        improvedProcessedGarbageName = circlesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                        break;
+                    }
+                case string name when name.Contains("Калиброванные круги, шестигранники, квадраты"):
                     {
                         improvedProcessedGarbageName = calsibCirclesHandler.AdditionalStringHandle(baseProcessedGarbageName);
                         break;
@@ -310,6 +323,16 @@ namespace Algo.Algotithms
                 case string name when name.Contains("Ленты, широкополосный прокат"):
                     {
                         improvedProcessedGarbageName = tapesHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                        break;
+                    }
+                case string name when name.Contains("Части соединительные"):
+                    {
+                        improvedProcessedGarbageName = connectionPartsHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                        break;
+                    }
+                case string name when name.Contains("Листы, плиты, ленты из титана и сплавов"):
+                    {
+                        improvedProcessedGarbageName = sheetsAndPlatesHandler.AdditionalStringHandle(baseProcessedGarbageName);
                         break;
                     }
                 default:

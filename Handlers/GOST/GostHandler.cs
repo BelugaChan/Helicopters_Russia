@@ -38,6 +38,10 @@ namespace Algo.Handlers.Garbage
                         {
                             resStr = resStr.Substring(0, resStr.Length - 1);
                         }
+                        if (resStr.Length < 4)
+                        {
+                            continue;
+                        }
                         res.Add(resStr);
                     }
                 }
