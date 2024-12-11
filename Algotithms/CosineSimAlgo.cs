@@ -31,6 +31,7 @@ namespace Algo.Algotithms
         private IAdditionalENSHandler<ScrewsHandler> screwsHandler;
         private IAdditionalENSHandler<SoldersHandler> soldersHandler;
         private IAdditionalENSHandler<NailsHandler> nailsHandler;
+        private IAdditionalENSHandler<TapesHandler> tapesHandler;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IAdditionalENSHandler<LumberHandler> lumberHandler, 
@@ -45,6 +46,7 @@ namespace Algo.Algotithms
             IAdditionalENSHandler<ScrewsHandler> screwsHandler,
             IAdditionalENSHandler<SoldersHandler> soldersHandler,
             IAdditionalENSHandler<NailsHandler> nailsHandler,
+            IAdditionalENSHandler<TapesHandler> tapesHandler,
             Cosine cosine)
         {
             this.cosine = cosine;
@@ -61,6 +63,7 @@ namespace Algo.Algotithms
             this.screwsHandler = screwsHandler;
             this.soldersHandler = soldersHandler;
             this.nailsHandler = nailsHandler;
+            this.tapesHandler = tapesHandler;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
             (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<(TGarbageData,HashSet<string>)> garbageDataWithoutComparedStandarts)
@@ -175,7 +178,7 @@ namespace Algo.Algotithms
                 dataForPostProcessing.Add((garbageData, eNSHandler.BaseStringHandle(garbageData.ShortName),gosts));
             });
             //дополнительный прогон по позициям с для которых не были найдены подходящие стандарты
-            Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = 1/*Environment.ProcessorCount*/ }, (item, state) =>
+            Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 var (garbageDataItem, garbageName, gosts) = item;               
                 TStandart? bestStandart = default;
@@ -302,6 +305,11 @@ namespace Algo.Algotithms
                 case string name when name.Contains("Гвозди, Дюбели"):
                     {
                         improvedProcessedGarbageName = nailsHandler.AdditionalStringHandle(baseProcessedGarbageName);
+                        break;
+                    }
+                case string name when name.Contains("Ленты, широкополосный прокат"):
+                    {
+                        improvedProcessedGarbageName = tapesHandler.AdditionalStringHandle(baseProcessedGarbageName);
                         break;
                     }
                 default:
