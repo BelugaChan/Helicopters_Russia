@@ -9,7 +9,7 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Калиброванные круги, шестигранники, квадраты
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> {"АТП","АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
+        private HashSet<string> stopWords = new HashSet<string> {"Ф","ММ","АТП","АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
 
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
