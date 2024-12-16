@@ -194,6 +194,7 @@ namespace Algo.Algotithms
             {
                 best.Add((item, standart), bestValue);
             }
+            progressStrategy.UpdateProgress(new Models.Progress { Step = "Алгоритм завершил свою работу. Ожидайте записи результатов обработки в файл", CurrentProgress = 100 });
             return (worst, mid, best);
         }
 
