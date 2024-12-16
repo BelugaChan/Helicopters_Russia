@@ -1,14 +1,9 @@
-﻿using Algo.Interfaces;
-using Algo.Interfaces.Algorithms;
+﻿using Algo.Interfaces.Algorithms;
+using Algo.Interfaces.ProgressStrategy;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Mergers;
 using Helicopters_Russia.Models;
-using Microsoft.Extensions.Options;
-using Microsoft.VisualBasic;
-using NPOI.SS.Formula.Functions;
-using System;
 using System.Collections.Concurrent;
-using System.Threading;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
@@ -17,7 +12,11 @@ using Telegram.Bot.Types.ReplyMarkups;
 
 namespace Helicopters_Russia.Services
 {
-    public class UpdateHandler(ITelegramBotClient botClient, ILogger<UpdateHandler> logger, FileProcessingService fileProcessingService, ISimilarityCalculator similarityCalculator) : IUpdateHandler
+    public class UpdateHandler
+        (ITelegramBotClient botClient, 
+        ILogger<UpdateHandler> logger, 
+        FileProcessingService fileProcessingService,
+        IProgressStrategy progressStrategy) : IUpdateHandler
     {
         private readonly string downloadDataPath = "Download Data";
         private readonly string dataPath = "Data";
@@ -147,31 +146,12 @@ namespace Helicopters_Russia.Services
         {
             var chatId = update.Message!.Chat.Id;
             logger.LogInformation($"The \"GetStatus\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
-            var res = similarityCalculator.GetProgress();
-            if (res == 0 || double.IsNaN(res))
-            {
-                await botClient.SendMessage(
-                    chatId,
-                    "Алгоритм не начал работу.",
-                    cancellationToken: default
-                );
-            }
-            else if(res < 100)
-            {
-                await botClient.SendMessage(
-                    chatId,
-                    $"Процент выполнения задачи: {res:0.00}%",
-                    cancellationToken: default
-                );
-            }
-            else if(res == 100)
-            {
-                await botClient.SendMessage(
-                    chatId,
-                    $"Алгоритм полностью завершил работу",
-                    cancellationToken: default
-                );
-            }
+            var progress = progressStrategy.GetCurrentProgress();
+            await botClient.SendMessage(
+                chatId,
+                $"Step: {progress.Step}, Progress: {progress.CurrentProgress}%",
+                cancellationToken: default
+            );
         }
 
         private async Task StartProccessing(Update update) //Начало обработки пользователя 

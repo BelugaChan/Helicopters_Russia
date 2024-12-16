@@ -1,20 +1,19 @@
 using Abstractions.Interfaces;
-using Algo.Abstract;
 using Algo.Algotithms;
+using Algo.Facade;
 using Algo.Factory;
 using Algo.Handlers.ENS;
 using Algo.Handlers.Garbage;
 using Algo.Handlers.GOST;
 using Algo.Handlers.Standart;
-using Algo.Interfaces;
 using Algo.Interfaces.Algorithms;
-using Algo.Interfaces.Handlers;
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.Handlers.GOST;
 using Algo.Interfaces.Handlers.Standart;
-using Algo.Interfaces.Wrappers;
+using Algo.Interfaces.ProgressStrategy;
 using Algo.Models;
-using Algo.Wrappers;
+using Algo.ProgressStrategy;
+using Algo.Registry;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Readers;
 using ExcelHandler.Writers;
@@ -46,29 +45,48 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<FileProcessingService>();
             builder.Services.AddSingleton<UpdateHandler>();
             builder.Services.AddHostedService<BotService>();
+
+            builder.Services.AddSingleton<IExcelReader, NPOIReader>();
+            builder.Services.AddSingleton<IExcelWriter, NPOIWriter>();
+            builder.Services.AddSingleton<IProgressStrategy, ConsoleProgressStrategy>();
+            builder.Services.AddSingleton<IUpdatedEntityFactoryGarbageData<GarbageData>, GarbageDataFactory>();
+            builder.Services.AddSingleton<IUpdatedEntityFactoryStandart<Standart>, StandartFactory>();
             builder.Services.AddSingleton<IENSHandler, ENSHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<CalsibCirclesHandler>,CalsibCirclesHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<RopesAndCablesHandler>, RopesAndCablesHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<LumberHandler>, LumberHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<MountingWiresHandler>, MountingWiresHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<WireHandler>, WireHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<BarsAndTiresHandler>, BarsAndTiresHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<PipesHandler>, PipesHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<WashersHandler>, WashersHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<RodHandler>, RodHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<ScrewsHandler>, ScrewsHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<SoldersHandler>, SoldersHandler>();
-            builder.Services.AddSingleton<IAdditionalENSHandler<NailsHandler>, NailsHandler>();
+            builder.Services.AddSingleton(provider => new Cosine(3));
+            builder.Services.AddSingleton(provider => 
+            {
+                var registry = new ENSHandlerRegistry();
+
+                registry.RegisterHandler(["Калиброванные круги, шестигранники, квадраты"], new Func<string, string>((str) => new CalsibCirclesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Пиломатериалы"], new Func<string, string>((str) => new LumberHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Канаты, Тросы"], new Func<string, string>((str) => new RopesAndCablesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Провода монтажные"], new Func<string, string>((str) => new MountingWiresHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Проволока"], new Func<string, string>((str) => new WireHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов"], new Func<string, string>((str) => new BarsAndTiresHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Канаты, Тросы"], new Func<string, string>((str) => new RopesAndCablesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"], new Func<string, string>((str) => new RopesAndCablesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Шайбы"], new Func<string, string>((str) => new WashersHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Катанка, проволока", "Катанка, проволока из меди и сплавов"], new Func<string, string>((str) => new RodHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Шурупы"], new Func<string, string>((str) => new ScrewsHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Припои (прутки, проволока, трубки)"], new Func<string, string>((str) => new SoldersHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Гвозди, Дюбели"], new Func<string, string>((str) => new NailsHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Ленты, широкополосный прокат"], new Func<string, string>((str) => new TapesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Круги, шестигранники, квадраты"], new Func<string, string>((str) => new CirclesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Части соединительные"], new Func<string, string>((str) => new ConnectionPartsHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Листы, плиты, ленты из титана и сплавов"], new Func<string, string>((str) => new SheetsAndPlatesHandler().AdditionalStringHandle(str)));
+
+                return registry;
+            });
+            
             builder.Services.AddSingleton<IGostHandle, GostHandler>();
             builder.Services.AddSingleton<IGostRemove, GostRemover>();
             builder.Services.AddSingleton<IStandartHandle<Standart>, StandartHandler<Standart>>();
             builder.Services.AddSingleton<ISimilarityCalculator, CosineSimAlgo>();
-            builder.Services.AddSingleton<IAlgoWrapper<Standart, GarbageData>, AlgoWrapper<Standart, GarbageData>>();
-            builder.Services.AddSingleton<IExcelReader, NPOIReader>();
-            builder.Services.AddSingleton<IExcelWriter, NPOIWriter>();
-            builder.Services.AddSingleton<IUpdatedEntityFactoryGarbageData<GarbageData>, GarbageDataFactory>();
-            builder.Services.AddSingleton<IUpdatedEntityFactoryStandart<Standart>, StandartFactory>();
-            builder.Services.AddSingleton<Cosine>(provider => new Cosine(3));
+            builder.Services.AddSingleton<AlgoFacade<Standart, GarbageData>>();
+
+
+
+
             //builder.Services.AddSingleton<FileProcessingService>();
 
             var host = builder.Build();
