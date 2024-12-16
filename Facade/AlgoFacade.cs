@@ -1,6 +1,8 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Interfaces.Handlers.GOST;
 using Algo.Interfaces.Handlers.Standart;
+using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System.Collections.Concurrent;
 
 namespace Algo.Facade
@@ -12,19 +14,20 @@ namespace Algo.Facade
         private IGostHandle gostHandle;
         private IStandartHandle<TStandart> standartHandle;
         private IGostRemove gostRemove;
-        public AlgoFacade(IGostHandle gostHandle, IStandartHandle<TStandart> standartHandle, IGostRemove gostRemove)
+        private IProgressStrategy progressStrategy;
+        public AlgoFacade(IGostHandle gostHandle, IStandartHandle<TStandart> standartHandle, IGostRemove gostRemove, IProgressStrategy progressStrategy)
         {
             this.gostHandle = gostHandle;
             this.standartHandle = standartHandle;
             this.gostRemove = gostRemove;
+            this.progressStrategy = progressStrategy;
         }
 
         //Основной метод
         public AlgoResult<TStandart,TGarbageData> AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
         {           
-            Console.WriteLine("Starting getting gosts from dirty data");
             var processedGarbageData = ProcessedGarbageData(garbageData);
-            Console.WriteLine("Done");
+
             var processedStandarts = ProcessedStandarts(standarts);//абсолютно все стандарты
             
             var matchedResults = MatchResults(processedGarbageData, processedStandarts);
@@ -66,6 +69,7 @@ namespace Algo.Facade
         //Если сопоставление не находится (ГОСТ грязной позиции не распознан, либо такого ГОСТа нет в эталонах, то грязная запись добавляется в отдельную коллекцию, по которой в дальнейшем будет дефолтный прогон алгоритма)
         public ConcurrentBag<MatchedResult<TStandart, TGarbageData>> MatchResults(ProcessedGarbageData<TGarbageData> processedGarbageData, GroupedStandarts<TStandart> groupedStandarts)
         {
+            int currentProgress = 0;
             var result = new ConcurrentBag<MatchedResult<TStandart, TGarbageData>>();
             Parallel.ForEach(processedGarbageData.Items, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (processedGarbageDataItem) =>
             {
@@ -77,6 +81,13 @@ namespace Algo.Facade
                 else
                 {
                     result.Add(new MatchedResult<TStandart, TGarbageData>(processedGarbageDataItem, matches));
+                }
+                currentProgress = Interlocked.Increment(ref currentProgress);
+                if (currentProgress % 100 == 0)
+                {
+                    progressStrategy.UpdateProgress(new Progress { Step = "2. Сопоставление групп стандартов грязным позициям", CurrentProgress = Math.Round((double)currentProgress / processedGarbageData.Items.Count * 100, 2) });
+                    progressStrategy.LogProgress();
+                    //Console.WriteLine($"HandleStandartNames: {Math.Round((double)currentProgress / standarts.Count * 100,2)}");
                 }
             });
             return result;

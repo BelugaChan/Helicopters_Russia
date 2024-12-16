@@ -2,6 +2,7 @@
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.Handlers.GOST;
 using Algo.Interfaces.Handlers.Standart;
+using Algo.Interfaces.ProgressStrategy;
 using System.Collections.Concurrent;
 
 namespace Algo.Handlers.Standart
@@ -13,12 +14,14 @@ namespace Algo.Handlers.Standart
         private IGostRemove gostRemove;
         private IGostHandle gostHandle;
         private IUpdatedEntityFactoryStandart<TStandart> updatedEntityFactoryStandart;
-        public StandartHandler(IENSHandler eNSHandler,IGostRemove gostRemove,IUpdatedEntityFactoryStandart<TStandart> updatedEntityFactoryStandart, IGostHandle gostHandle)
+        private IProgressStrategy progressStrategy;
+        public StandartHandler(IENSHandler eNSHandler,IGostRemove gostRemove,IUpdatedEntityFactoryStandart<TStandart> updatedEntityFactoryStandart, IGostHandle gostHandle, IProgressStrategy progressStrategy)
         {
             this.eNSHandler = eNSHandler;
             this.gostRemove = gostRemove;
             this.updatedEntityFactoryStandart = updatedEntityFactoryStandart;
             this.gostHandle = gostHandle;
+            this.progressStrategy = progressStrategy;
         }
 
         public ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>> GroupingStandartsByENS(ConcurrentDictionary<TStandart, string> standarts) //new feature
@@ -56,9 +59,11 @@ namespace Algo.Handlers.Standart
                     eNSHandler.BaseStringHandle(/*standartItem.Name*/itemNameWithRemovedGosts)
                     );
                 currentProgress = Interlocked.Increment(ref currentProgress);
-                if (currentProgress % 10 == 0)
+                if (currentProgress % 100 == 0)
                 {
-                    Console.WriteLine($"HandleStandartNames: {Math.Round((double)currentProgress / standarts.Count * 100,2)}");
+                    progressStrategy.UpdateProgress(new Models.Progress { Step = "1. Обработка наименований стандартов", CurrentProgress = Math.Round((double)currentProgress / standarts.Count * 100, 2) });
+                    progressStrategy.LogProgress();
+                    //Console.WriteLine($"HandleStandartNames: {Math.Round((double)currentProgress / standarts.Count * 100,2)}");
                 }
             });
             return fixedStandarts;

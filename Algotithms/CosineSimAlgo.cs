@@ -1,6 +1,7 @@
 ﻿using Algo.Abstract;
 using Algo.Facade;
 using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 using Algo.Registry;
 using F23.StringSimilarity;
 using System.Collections.Concurrent;
@@ -9,18 +10,22 @@ namespace Algo.Algotithms
 {
     public class CosineSimAlgo : SimilarityCalculator
     {
-        //private int shigleLength;
-        private Cosine cosine;
+        //private int shigleLength;       
         private IENSHandler eNSHandler;
+        private IProgressStrategy progressStrategy;
+
         private ENSHandlerRegistry handlerRegistry;
+        private Cosine cosine;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
+            IProgressStrategy progressStrategy,
             ENSHandlerRegistry handlerRegistry,
             Cosine cosine)
-        {
-            this.cosine = cosine;
+        {            
             this.eNSHandler = eNSHandler;
+            this.progressStrategy = progressStrategy;
             this.handlerRegistry = handlerRegistry;
+            this.cosine = cosine;
         }
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
         {
@@ -54,7 +59,7 @@ namespace Algo.Algotithms
                 var tokens = baseProcessedGarbageName.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                 foreach (var gost in garbageDataGosts)
                 {
-                    var gostTokens = gost.Split(new char[] {' ', '-'}).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                    var gostTokens = gost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                     foreach (var gostToken in gostTokens)
                     {
                         tokens.Add(gostToken); //добавление в список токенов всех чисел из ГОСТов, найденных для данной грязной позиции.
@@ -113,7 +118,7 @@ namespace Algo.Algotithms
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
                 if (similarityCoeff < 0.05)
                 {
-                    dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName,garbageDataGosts));
+                    dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName, garbageDataGosts));
                     //worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 }
                 else if (similarityCoeff < 0.6)
@@ -122,7 +127,9 @@ namespace Algo.Algotithms
                     bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 if (currentProgress % 100 == 0)
                 {
-                    Console.WriteLine($"текущий прогресс: {currentProgress} | наилучшее сопоставление (> 0.7), ед.: {bestBag.Count} | среднее сопоставление, ед: {midBag.Count}");
+                    progressStrategy.UpdateProgress(new Models.Progress {Step = "3. Базовый прогон алгоритма Cosine", CurrentProgress=Math.Round((double)currentProgress / matchedData.Count * 100,2) });
+                    progressStrategy.LogProgress();
+                    //Console.WriteLine($"текущий прогресс: {currentProgress} | наилучшее сопоставление (> 0.7), ед.: {bestBag.Count} | среднее сопоставление, ед: {midBag.Count}");
                 }
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });
@@ -166,7 +173,9 @@ namespace Algo.Algotithms
                 }               
                 if (currentProgress % 10 == 0)
                 {
-                    Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count * 100, 2):f2}%");
+                    //Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count * 100, 2):f2}%");
+                    progressStrategy.UpdateProgress(new Models.Progress { Step = "4. Дополнительный прогон алгоритма Cosine", CurrentProgress = Math.Round((double)currentProgress / dataForPostProcessing.Count * 100, 2)});
+                    progressStrategy.LogProgress();
                 }
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });
