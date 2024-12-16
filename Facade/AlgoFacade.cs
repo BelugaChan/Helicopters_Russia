@@ -127,9 +127,9 @@ namespace Algo.Facade
 
         public GarbageItem(string processedName, TGarbageData data, HashSet<string> processedGosts)
         {
-            this.ProcessedName = processedName;
-            this.Data = data;
-            this.ProcessedGosts = processedGosts;
+            ProcessedName = processedName;
+            Data = data;
+            ProcessedGosts = processedGosts;
         }
     }
     

@@ -166,7 +166,7 @@ namespace Algo.Algotithms
                 }               
                 if (currentProgress % 10 == 0)
                 {
-                    Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count,2) * 100}%");
+                    Console.WriteLine($"Additional Checkin' текущий прогресс: {Math.Round((double)currentProgress / dataForPostProcessing.Count * 100, 2):f2}%");
                 }
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });
