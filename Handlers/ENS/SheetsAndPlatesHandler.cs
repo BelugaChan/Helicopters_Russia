@@ -9,6 +9,9 @@ namespace Algo.Handlers.ENS
 {
     public class SheetsAndPlatesHandler : IAdditionalENSHandler<SheetsAndPlatesHandler>
     {
+        /// <summary>
+        /// Листы, плиты, ленты из титана и сплавов
+        /// </summary>
         private HashSet<string> stopWords = new HashSet<string> { "ИЗ","ТИТАНОВЫХ","СПЛАВОВ" };
         public string AdditionalStringHandle(string str)
         {

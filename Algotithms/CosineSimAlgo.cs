@@ -1,16 +1,9 @@
-﻿using Abstractions.Interfaces;
-using Algo.Abstract;
-using Algo.Handlers.ENS;
+﻿using Algo.Abstract;
+using Algo.Facade;
 using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.Handlers.GOST;
-using Algo.Models;
+using Algo.Registry;
 using F23.StringSimilarity;
-using NPOI.HSSF.Record;
-using NPOI.SS.Formula.Functions;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Text;
-using System.Text.RegularExpressions;
 
 namespace Algo.Algotithms
 {
@@ -19,63 +12,17 @@ namespace Algo.Algotithms
         //private int shigleLength;
         private Cosine cosine;
         private IENSHandler eNSHandler;
-        private IAdditionalENSHandler<LumberHandler> lumberHandler;
-        private IAdditionalENSHandler<CalsibCirclesHandler> calsibCirclesHandler;
-        private IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler;
-        private IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler;
-        private IAdditionalENSHandler<WireHandler> wireHandler;
-        private IAdditionalENSHandler<BarsAndTiresHandler> barsHandler;
-        private IAdditionalENSHandler<PipesHandler> pipesHandler;
-        private IAdditionalENSHandler<WashersHandler> washersHandler;
-        private IAdditionalENSHandler<RodHandler> rodsHandler;
-        private IAdditionalENSHandler<ScrewsHandler> screwsHandler;
-        private IAdditionalENSHandler<SoldersHandler> soldersHandler;
-        private IAdditionalENSHandler<NailsHandler> nailsHandler;
-        private IAdditionalENSHandler<TapesHandler> tapesHandler;
-        private IAdditionalENSHandler<CirclesHandler> circlesHandler;
-        private IAdditionalENSHandler<ConnectionPartsHandler> connectionPartsHandler;
-        private IAdditionalENSHandler<SheetsAndPlatesHandler> sheetsAndPlatesHandler;
+        private ENSHandlerRegistry handlerRegistry;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
-            IAdditionalENSHandler<LumberHandler> lumberHandler, 
-            IAdditionalENSHandler<CalsibCirclesHandler> calsibCirclesHandler, 
-            IAdditionalENSHandler<RopesAndCablesHandler> ropesAndCablesHandler,
-            IAdditionalENSHandler<MountingWiresHandler> mountingWiresHandler,
-            IAdditionalENSHandler<WireHandler> wireHandler,
-            IAdditionalENSHandler<BarsAndTiresHandler> barsHandler,
-            IAdditionalENSHandler <PipesHandler> pipesHandler,
-            IAdditionalENSHandler<WashersHandler> washersHandler,
-            IAdditionalENSHandler<RodHandler> rodsHandler,
-            IAdditionalENSHandler<ScrewsHandler> screwsHandler,
-            IAdditionalENSHandler<SoldersHandler> soldersHandler,
-            IAdditionalENSHandler<NailsHandler> nailsHandler,
-            IAdditionalENSHandler<TapesHandler> tapesHandler,
-            IAdditionalENSHandler<CirclesHandler> circlesHandler,
-            IAdditionalENSHandler<ConnectionPartsHandler> connectionPartsHandler,
-            IAdditionalENSHandler<SheetsAndPlatesHandler> sheetsAndPlatesHandler,
+            ENSHandlerRegistry handlerRegistry,
             Cosine cosine)
         {
             this.cosine = cosine;
             this.eNSHandler = eNSHandler;
-            this.lumberHandler = lumberHandler;
-            this.calsibCirclesHandler = calsibCirclesHandler;
-            this.ropesAndCablesHandler = ropesAndCablesHandler;
-            this.mountingWiresHandler = mountingWiresHandler;
-            this.wireHandler = wireHandler;
-            this.barsHandler = barsHandler;
-            this.pipesHandler = pipesHandler;
-            this.washersHandler = washersHandler;
-            this.rodsHandler = rodsHandler;
-            this.screwsHandler = screwsHandler;
-            this.soldersHandler = soldersHandler;
-            this.nailsHandler = nailsHandler;
-            this.tapesHandler = tapesHandler;
-            this.circlesHandler = circlesHandler;
-            this.connectionPartsHandler = connectionPartsHandler;
-            this.sheetsAndPlatesHandler = sheetsAndPlatesHandler;
+            this.handlerRegistry = handlerRegistry;
         }
-        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>
-            (List<ConcurrentDictionary<(string, TGarbageData, HashSet<string>), ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>>> data, ConcurrentDictionary<TStandart, string> standarts, ConcurrentBag<(TGarbageData,HashSet<string>)> garbageDataWithoutComparedStandarts)
+        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
         {
             currentProgress = 0;          
             Dictionary<(TGarbageData, TStandart?), double> worst = new();
@@ -83,17 +30,26 @@ namespace Algo.Algotithms
             Dictionary<(TGarbageData, TStandart?), double> best = new();
 
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing = new();
+
             ConcurrentDictionary<(TGarbageData, TStandart?), double> worstBag = new();
             ConcurrentDictionary<(TGarbageData, TStandart?), double> midBag = new();
             ConcurrentDictionary<(TGarbageData, TStandart?), double> bestBag = new();
-           
-            Parallel.ForEach(data, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
+
+            var matchedData = algoResult.MatchedData;
+            var processedStandarts = algoResult.ProcessedStandards;
+            var unmatchedGarbageData = algoResult.UnmatchedGarbageData;
+
+            Parallel.ForEach(matchedData, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 TStandart? bestStandart = default;
                 int commonElementsCount = 0;
                 double similarityCoeff = -1;
-                
-                var (garbageDataHandeledName, garbageDataItem, garbageDataGosts) = item.Keys.FirstOrDefault();
+
+                var garbageItem = item.GarbageItem;
+                var garbageDataHandeledName = garbageItem.ProcessedName;
+                var garbageDataItem = garbageItem.Data;
+                var garbageDataGosts = garbageItem.ProcessedGosts;
+
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName/*garbageDataItem.ShortName*/);
                 var tokens = baseProcessedGarbageName.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
                 foreach (var gost in garbageDataGosts)
@@ -106,62 +62,52 @@ namespace Algo.Algotithms
                 }
                 //HashSet<int> tokenSet = new HashSet<int>(tokens);
                 string improvedProcessedGarbageName = "";
-                var standartStuff = item.Values; //сопоставленные группы эталонов для грязной позиции по ГОСТам
+                var standartStuff = item.Matches; //сопоставленные группы эталонов для грязной позиции по ГОСТам
                 foreach (var standartGroups in standartStuff) //сравнение грязной строки со всеми позициями каждой из групп, где хотя бы в одном из элементов совпал гост с грязной позицией
                 {
-                    //if (standartGroups.Count == 0)//null reference!!!!
-                    //{
-                    //    dataForPostProcessing.Add((garbageDataItem, baseProcessedGarbageName,garbageDataGosts));
-                    //    //worstBag.TryAdd((garbageDataItem, bestStandart), 0);
-                    //    break;
-                    //}
-
-                    var groupClassificationName = standartGroups.Keys.FirstOrDefault();
+                    var groupClassificationName = standartGroups.Key;
                     //персональные обработчики для классификаторов ЕНС
-                    improvedProcessedGarbageName = SelectHandler(groupClassificationName, improvedProcessedGarbageName, baseProcessedGarbageName);
-                    foreach (var standart in standartGroups.Values) //стандарты в каждой отдельной группе
+                    improvedProcessedGarbageName = SelectHandler(groupClassificationName, baseProcessedGarbageName);
+                    foreach (var standart in standartGroups.Value) //стандарты в каждой отдельной группе
                     {
-                        foreach (var standartItem in standart)
+                        var similarity = cosine.Similarity(improvedProcessedGarbageName/*garbageProfile*/, standart.Value);
+                        if (similarity > similarityCoeff)
                         {
-                            var similarity = cosine.Similarity(improvedProcessedGarbageName/*garbageProfile*/, standartItem.Value);
-                            if (similarity > similarityCoeff)
+                            similarityCoeff = similarity;
+                            bestStandart = standart.Key;
+                            var standartTokens = standart.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                            var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
+                            foreach (var handledGost in standartGosts)
                             {
-                                similarityCoeff = similarity;
-                                bestStandart = standartItem.Key;
-                                var standartTokens = standartItem.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                                var standartGosts = new HashSet<string>() {standartItem.Key.MaterialNTD, standartItem.Key.NTD };
-                                foreach (var handledGost in standartGosts)
+                                var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                                foreach (var handledToken in handledGostTokens)
                                 {
-                                    var handledGostTokens = handledGost.Split(new char[] {' ', '-'}).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                                    foreach (var handledToken in handledGostTokens)
-                                    {
-                                        standartTokens.Add(handledToken);
-                                    }
+                                    standartTokens.Add(handledToken);
                                 }
-                                //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
-                                commonElementsCount = standartTokens.Where(tokens.Contains).ToArray().Length;
                             }
-                            else if (similarity == similarityCoeff)
+                            //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                            commonElementsCount = standartTokens.Where(tokens.Contains).ToArray().Length;
+                        }
+                        else if (similarity == similarityCoeff)
+                        {
+                            var standartTokens = standart.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                            var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
+                            foreach (var handledGost in standartGosts)
                             {
-                                var standartTokens = standartItem.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                                var standartGosts = new HashSet<string>() { standartItem.Key.MaterialNTD, standartItem.Key.NTD };
-                                foreach (var handledGost in standartGosts)
+                                var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                                foreach (var handledToken in handledGostTokens)
                                 {
-                                    var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                                    foreach (var handledToken in handledGostTokens)
-                                    {
-                                        standartTokens.Add(handledToken);
-                                    }
+                                    standartTokens.Add(handledToken);
                                 }
-                                //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
-                                int commonElementsCountNow = standartTokens.Where(tokens.Contains).ToArray().Length;
-                                if (commonElementsCountNow > commonElementsCount)
-                                {
-                                    bestStandart = standartItem.Key;
-                                }
+                            }
+                            //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                            int commonElementsCountNow = standartTokens.Where(tokens.Contains).ToArray().Length;
+                            if (commonElementsCountNow > commonElementsCount)
+                            {
+                                bestStandart = standart.Key;
                             }
                         }
-                        
+
                     }
                 }
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
@@ -181,18 +127,20 @@ namespace Algo.Algotithms
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });
             currentProgress = 0;
-            Parallel.ForEach(garbageDataWithoutComparedStandarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
+            
+            Parallel.ForEach(unmatchedGarbageData, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 var (garbageData, gosts) = item;
                 dataForPostProcessing.Add((garbageData, eNSHandler.BaseStringHandle(garbageData.ShortName),gosts));
             });
             //дополнительный прогон по позициям с для которых не были найдены подходящие стандарты
+            var allProcessedStandarts = new ConcurrentDictionary<TStandart, string>(processedStandarts.GroupStandarts.Values.SelectMany(innerDict => innerDict));
             Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
                 var (garbageDataItem, garbageName, gosts) = item;               
                 TStandart? bestStandart = default;
                 double similarityCoeff = -1;
-                foreach (var (standart, standartName) in standarts)
+                foreach (var (standart, standartName) in allProcessedStandarts)
                 {
                     double coeff = cosine.Similarity(garbageName, standartName);
                     if (coeff > similarityCoeff)
@@ -241,107 +189,15 @@ namespace Algo.Algotithms
         }
 
 
-        public string SelectHandler(string groupClassificationName, string improvedProcessedGarbageName, string baseProcessedGarbageName)
+        public string SelectHandler(string groupClassificationName, string baseProcessedGarbageName)
         {
-            switch (groupClassificationName)
+            var handler = handlerRegistry.GetHandler(groupClassificationName);
+            if (handler != null)
             {
-                case string name when name.Contains("Круги, шестигранники, квадраты"):
-                    {
-                        improvedProcessedGarbageName = circlesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Калиброванные круги, шестигранники, квадраты"):
-                    {
-                        improvedProcessedGarbageName = calsibCirclesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Пиломатериалы"):
-                    {
-                        improvedProcessedGarbageName = lumberHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Канаты, Тросы"):
-                    {
-                        improvedProcessedGarbageName = ropesAndCablesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Провода монтажные"):
-                    {
-                        improvedProcessedGarbageName = mountingWiresHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Проволока"):
-                    {
-                        improvedProcessedGarbageName = wireHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Прутки из титана и сплавов")
-                                   || name.Contains("Прутки, шины из алюминия и сплавов")
-                                   || name.Contains("Прутки, шины из меди и сплавов"):
-                    {
-                        improvedProcessedGarbageName = barsHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Трубы бесшовные")
-                                   || name.Contains("Трубы сварные")
-                                   || name.Contains("Трубы, трубки из алюминия и сплавов")
-                                   || name.Contains("Трубы, трубки из меди и сплавов"):
-                    {
-                        improvedProcessedGarbageName = pipesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Шайбы"):
-                    {
-                        improvedProcessedGarbageName = washersHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Катанка, проволока из меди и сплавов"): //need to fix
-                    {
-                        improvedProcessedGarbageName = baseProcessedGarbageName;
-                        break;
-                    }
-                case string name when name.Contains("Катанка, проволока"):
-                    {
-                        improvedProcessedGarbageName = rodsHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Шурупы"):
-                    {
-                        improvedProcessedGarbageName = screwsHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Припои (прутки, проволока, трубки)"):
-                    {
-                        improvedProcessedGarbageName = soldersHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Гвозди, Дюбели"):
-                    {
-                        improvedProcessedGarbageName = nailsHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Ленты, широкополосный прокат"):
-                    {
-                        improvedProcessedGarbageName = tapesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Части соединительные"):
-                    {
-                        improvedProcessedGarbageName = connectionPartsHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                case string name when name.Contains("Листы, плиты, ленты из титана и сплавов"):
-                    {
-                        improvedProcessedGarbageName = sheetsAndPlatesHandler.AdditionalStringHandle(baseProcessedGarbageName);
-                        break;
-                    }
-                default:
-                    {
-                        improvedProcessedGarbageName = baseProcessedGarbageName;
-                        break;
-                    }
+                return handler(baseProcessedGarbageName);
             }
-            return improvedProcessedGarbageName;
+
+            return baseProcessedGarbageName;
         }
        
     }
