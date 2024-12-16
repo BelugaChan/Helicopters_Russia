@@ -63,8 +63,7 @@ namespace Helicopters_Russia
                 registry.RegisterHandler(["Провода монтажные"], new Func<string, string>((str) => new MountingWiresHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Проволока"], new Func<string, string>((str) => new WireHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов"], new Func<string, string>((str) => new BarsAndTiresHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Канаты, Тросы"], new Func<string, string>((str) => new RopesAndCablesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"], new Func<string, string>((str) => new RopesAndCablesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"], new Func<string, string>((str) => new PipesHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Шайбы"], new Func<string, string>((str) => new WashersHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Катанка, проволока", "Катанка, проволока из меди и сплавов"], new Func<string, string>((str) => new RodHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Шурупы"], new Func<string, string>((str) => new ScrewsHandler().AdditionalStringHandle(str)));
@@ -74,7 +73,6 @@ namespace Helicopters_Russia
                 registry.RegisterHandler(["Круги, шестигранники, квадраты"], new Func<string, string>((str) => new CirclesHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Части соединительные"], new Func<string, string>((str) => new ConnectionPartsHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Листы, плиты, ленты из титана и сплавов"], new Func<string, string>((str) => new SheetsAndPlatesHandler().AdditionalStringHandle(str)));
-
                 return registry;
             });
             
