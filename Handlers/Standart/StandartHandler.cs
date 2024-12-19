@@ -3,6 +3,7 @@ using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.Handlers.GOST;
 using Algo.Interfaces.Handlers.Standart;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System.Collections.Concurrent;
 
 namespace Algo.Handlers.Standart
@@ -26,7 +27,9 @@ namespace Algo.Handlers.Standart
 
         public ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>> GroupingStandartsByENS(ConcurrentDictionary<TStandart, string> standarts) //new feature
         {
-            var res = standarts.GroupBy(e => e.Key.ENSClassification).ToDictionary(group => group.Key, group => new ConcurrentDictionary<TStandart, string>(group.ToDictionary(e => e.Key, e => e.Value)));
+            var res = standarts.GroupBy(e => e.Key.ENSClassification)
+                .ToDictionary(group => group.Key, group => 
+                new ConcurrentDictionary<TStandart, string>(group.ToDictionary(e => e.Key, e => e.Value)));
             return new ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>(res);
         }
 
@@ -59,12 +62,7 @@ namespace Algo.Handlers.Standart
                     eNSHandler.BaseStringHandle(/*standartItem.Name*/itemNameWithRemovedGosts)
                     );
                 currentProgress = Interlocked.Increment(ref currentProgress);
-                if (currentProgress % 100 == 0)
-                {
-                    progressStrategy.UpdateProgress(new Models.Progress { Step = "1. Обработка наименований стандартов", CurrentProgress = Math.Round((double)currentProgress / standarts.Count * 100, 2) });
-                    progressStrategy.LogProgress();
-                    //Console.WriteLine($"HandleStandartNames: {Math.Round((double)currentProgress / standarts.Count * 100,2)}");
-                }
+                UpdateProgress(currentProgress, standarts.Count);
             });
             return fixedStandarts;
         }
@@ -78,6 +76,19 @@ namespace Algo.Handlers.Standart
 
             return new ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>(filteredData);
 
+        }
+
+        private void UpdateProgress(int current, int total)
+        {
+            if (current % 100 == 0)
+            {
+                progressStrategy.UpdateProgress(new Progress
+                {
+                    Step = "1. Обработка наименований стандартов",
+                    CurrentProgress = Math.Round((double)current / total * 100, 2)
+                });
+                progressStrategy.LogProgress();
+            }
         }
     }
 }

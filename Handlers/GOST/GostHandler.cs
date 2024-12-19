@@ -52,38 +52,46 @@ namespace Algo.Handlers.Garbage
         public HashSet<string> GostsPostProcessor(HashSet<string> gosts)
         {
             //resGosts.Clear();
-            var res = new HashSet<string>();
-            foreach (var gost in gosts)
-            {
-                string tyPatternFirst = @"Г\d+-\d+-\d+-\d+";
-                string tyPatternSecond = @"(ТУ\s+)(\d+)\.(\d+\.\d+-\d+)";
-                string resultFirst = Regex.Replace(gost, tyPatternFirst, match =>
-                {
-                    return match.Value.Replace("Г", "ТУ");
-                });
-                string resultSecond = Regex.Replace(resultFirst, tyPatternSecond, "$1$2-$3");
+            //var res = new HashSet<string>();
+            //foreach (var gost in gosts)
+            //{
+            //    string tyPatternFirst = @"Г\d+-\d+-\d+-\d+";
+            //    string tyPatternSecond = @"(ТУ\s+)(\d+)\.(\d+\.\d+-\d+)";
+            //    string resultFirst = Regex.Replace(gost, tyPatternFirst, match =>
+            //    {
+            //        return match.Value.Replace("Г", "ТУ");
+            //    });
+            //    string resultSecond = Regex.Replace(resultFirst, tyPatternSecond, "$1$2-$3");
 
-                string resStr = Regex.Replace(gost, @"Г\s*\d", match =>
-                {
-                    return match.Value.Replace("Г", "ГОСТ");
-                });
-                res.Add(resStr.Replace(" ", "").TrimEnd('/').TrimEnd(','));
-            }
-            return res;
+            //    string resStr = Regex.Replace(gost, @"Г\s*\d", match =>
+            //    {
+            //        return match.Value.Replace("Г", "ГОСТ");
+            //    });
+            //    res.Add(resStr.Replace(" ", "").TrimEnd('/').TrimEnd(','));
+            //}
+            //return res;
+            return gosts.Select(item =>
+            {
+                string processedGost = Regex.Replace(item, @"Г\d+-\d+-\d+-\d+", match => match.Value.Replace("Г", "ТУ"));
+                processedGost = Regex.Replace(processedGost, @"(ТУ\s+)(\d+)\.(\d+\.\d+-\d+)", "$1$2-$3");
+                processedGost = Regex.Replace(processedGost, @"Г\s*\d", match => match.Value.Replace("Г", "ГОСТ"));
+                return processedGost.Replace(" ", "").TrimEnd('/').TrimEnd(',');
+            }).ToHashSet();
         }
 
         public HashSet<string> RemoveLettersAndOtherSymbolsFromGosts(HashSet<string> gosts)
         {
-            var res = new HashSet<string>();
-            foreach (var item in gosts)
-            {
-                if (item.Length > 0)
-                {
-                    var withoutLetters = Regex.Replace(item, @"\p{L}", "");
-                    res.Add(withoutLetters.Replace(".","").Replace("-","").Replace("/","").Replace(" ",""));
-                }               
-            }
-            return res;
+            //var res = new HashSet<string>();
+            //foreach (var item in gosts)
+            //{
+            //    if (item.Length > 0)
+            //    {
+            //        var withoutLetters = Regex.Replace(item, @"\p{L}", "");
+            //        res.Add(withoutLetters.Replace(".","").Replace("-","").Replace("/","").Replace(" ",""));
+            //    }               
+            //}
+            //return res;
+            return gosts.Select(item => Regex.Replace(item, @"[\p{L}.\-/\s]", "")).Where(cleaned => cleaned.Length > 0).ToHashSet();
         }
     }
 }

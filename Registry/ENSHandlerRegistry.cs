@@ -14,14 +14,16 @@ namespace Algo.Registry
 
         public Func<string, string> GetHandler(string key)
         {
-            var localKeys = handlers.Keys.ToList();
-            foreach (var handlerKey in localKeys)
+            lock (handlers)
             {
-                if (handlerKey.Contains(key))
+                foreach (var handlerKey in handlers.Keys)
                 {
-                    return (Func<string, string>)handlers[handlerKey];
+                    if (handlerKey.Contains(key))
+                    {
+                        return (Func<string, string>)handlers[handlerKey];
+                    }
                 }
-            }
+            }          
             return null;
         }
     }

@@ -13,6 +13,7 @@ namespace Algo.Handlers.ENS
 
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
+            { "ПРУТОК", "КРУГ"},
             { " КР ", " КРУГ "},
             { " ШГ ", " ШЕСТИГРАННИК " },
             { " ШЕСТИГРАН ", " ШЕСТИГРАННИК " },

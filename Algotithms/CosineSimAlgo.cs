@@ -5,6 +5,7 @@ using Algo.Interfaces.ProgressStrategy;
 using Algo.Registry;
 using F23.StringSimilarity;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace Algo.Algotithms
 {
@@ -27,18 +28,18 @@ namespace Algo.Algotithms
             this.handlerRegistry = handlerRegistry;
             this.cosine = cosine;
         }
-        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<(TGarbageData, TStandart), double> mid, Dictionary<(TGarbageData, TStandart), double> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
+        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, Dictionary<TStandart, double>> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
         {
             currentProgress = 0;          
             Dictionary<(TGarbageData, TStandart?), double> worst = new();
-            Dictionary<(TGarbageData, TStandart?), double> mid = new();
-            Dictionary<(TGarbageData, TStandart?), double> best = new();
+            Dictionary<TGarbageData, Dictionary<TStandart, double>> mid = new();
+            Dictionary<TGarbageData, Dictionary<TStandart, double>> best = new();
 
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing = new();
 
             ConcurrentDictionary<(TGarbageData, TStandart?), double> worstBag = new();
-            ConcurrentDictionary<(TGarbageData, TStandart?), double> midBag = new();
-            ConcurrentDictionary<(TGarbageData, TStandart?), double> bestBag = new();
+            ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> midBag = new();
+            ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag = new();
 
             var matchedData = algoResult.MatchedData;
             var processedStandarts = algoResult.ProcessedStandards;
@@ -46,7 +47,7 @@ namespace Algo.Algotithms
 
             Parallel.ForEach(matchedData, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
-                TStandart? bestStandart = default;
+                ConcurrentDictionary<TStandart,double> bestStandart = new();
                 int commonElementsCount = 0;
                 double similarityCoeff = -1;
 
@@ -76,60 +77,80 @@ namespace Algo.Algotithms
                     foreach (var standart in standartGroups.Value) //стандарты в каждой отдельной группе
                     {
                         var similarity = cosine.Similarity(improvedProcessedGarbageName/*garbageProfile*/, standart.Value);
+
+                        var standartTokens = standart.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                        var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
+                        foreach (var handledGost in standartGosts)
+                        {
+                            var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                            foreach (var handledToken in handledGostTokens)
+                            {
+                                standartTokens.Add(handledToken);
+                            }
+                        }
+
                         if (similarity > similarityCoeff)
                         {
                             similarityCoeff = similarity;
-                            bestStandart = standart.Key;
-                            var standartTokens = standart.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                            var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
-                            foreach (var handledGost in standartGosts)
-                            {
-                                var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                                foreach (var handledToken in handledGostTokens)
-                                {
-                                    standartTokens.Add(handledToken);
-                                }
-                            }
-                            //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
+                            bestStandart.TryAdd(standart.Key,similarity);
                             commonElementsCount = standartTokens.Where(tokens.Contains).ToArray().Length;
                         }
                         else if (similarity == similarityCoeff)
                         {
-                            var standartTokens = standart.Value.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                            var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
-                            foreach (var handledGost in standartGosts)
-                            {
-                                var handledGostTokens = handledGost.Split(new char[] { ' ', '-' }).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
-                                foreach (var handledToken in handledGostTokens)
-                                {
-                                    standartTokens.Add(handledToken);
-                                }
-                            }
-                            //HashSet<int> standartTokenSet = new HashSet<int>(standartTokens);
                             int commonElementsCountNow = standartTokens.Where(tokens.Contains).ToArray().Length;
                             if (commonElementsCountNow > commonElementsCount)
                             {
-                                bestStandart = standart.Key;
+                                bestStandart.TryAdd(standart.Key, similarity);
                             }
                         }
-
+                        else if (similarity - similarityCoeff < 0.1)
+                        {
+                            bestStandart.TryAdd(standart.Key, similarity);
+                        }
                     }
                 }
+                bool addedFirst = false;
+                var orderedStandarts = bestStandart.OrderByDescending(t => t.Value).Take(3);
+                var a =
+                orderedStandarts.Where((kvp, index) =>
+                {
+                    if (index < orderedStandarts.Count() - 1)
+                    {
+                        var nextValue = Math.Round(orderedStandarts.ElementAt(index + 1).Value, 4);
+                        if (Math.Abs(nextValue - Math.Round(kvp.Value, 4)) > 0.2)
+                        {
+                            addedFirst = true;
+                            return true;
+                        }
+                    }
+                    return !addedFirst;
+                }).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
-                if (similarityCoeff < 0.05)
+                if (similarityCoeff < 0.1)
                 {
                     dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName, garbageDataGosts));
                     //worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 }
-                else if (similarityCoeff < 0.6)
-                    midBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                else if (similarityCoeff < 0.95)
+                    midBag.TryAdd(garbageDataItem, a/*orderedStandarts*/);
                 else
-                    bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                {
+                    //var orderedStandart = orderedStandarts.FirstOrDefault();
+                    if (a.ContainsValue(1))
+                    {
+                        var orderedStandart = a.FirstOrDefault();
+                        bestBag.TryAdd(garbageDataItem, new Dictionary<TStandart, double>() { {orderedStandart.Key,orderedStandart.Value } });
+                    }
+                    else
+                    {
+                        bestBag.TryAdd(garbageDataItem, a);
+                    }
+                }
+                    
                 if (currentProgress % 100 == 0)
                 {
                     progressStrategy.UpdateProgress(new Models.Progress {Step = "3. Базовый прогон алгоритма Cosine", CurrentProgress=Math.Round((double)currentProgress / matchedData.Count * 100,2) });
-                    progressStrategy.LogProgress();
-                    //Console.WriteLine($"текущий прогресс: {currentProgress} | наилучшее сопоставление (> 0.7), ед.: {bestBag.Count} | среднее сопоставление, ед: {midBag.Count}");
+                    progressStrategy.LogProgress();                    
                 }
                 currentProgress = Interlocked.Increment(ref currentProgress);
             });
@@ -144,8 +165,8 @@ namespace Algo.Algotithms
             var allProcessedStandarts = new ConcurrentDictionary<TStandart, string>(processedStandarts.GroupStandarts.Values.SelectMany(innerDict => innerDict));
             Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
-                var (garbageDataItem, garbageName, gosts) = item;               
-                TStandart? bestStandart = default;
+                var (garbageDataItem, garbageName, gosts) = item;
+                Dictionary<TStandart, double> bestStandart = new();
                 double similarityCoeff = -1;
                 foreach (var (standart, standartName) in allProcessedStandarts)
                 {
@@ -153,23 +174,53 @@ namespace Algo.Algotithms
                     if (coeff > similarityCoeff)
                     {
                         similarityCoeff = coeff;
-                        bestStandart = standart;
+                        bestStandart.TryAdd(standart, coeff);
+                    }
+                    else if (coeff - similarityCoeff < 0.2)
+                    {
+                        bestStandart.TryAdd(standart, coeff);
                     }
                 }
+                bool addedFirst = false;
+                var orderedStandarts = bestStandart.OrderByDescending(t => t.Value).Take(3);
+                var a =
+                orderedStandarts.Where((kvp, index) =>
+                {
+                    if (index < orderedStandarts.Count() - 1)
+                    {
+                        var nextValue = Math.Round(orderedStandarts.ElementAt(index + 1).Value, 4);
+                        if (Math.Abs(nextValue - Math.Round(kvp.Value, 4)) > 0.2)
+                        {
+                            addedFirst = true;
+                            return true;
+                        }
+                    }
+                    return !addedFirst;
+                }).ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
                 if ((gosts.Count == 0 || gosts.All(t => t.Length == 0)) && similarityCoeff > 0.05)//если у позиции отсутствует ГОСТ, то она переносится в коллекцию требует уточнения
                 {
-                    midBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                    midBag.TryAdd(garbageDataItem, a);
                 }
                 else
                 {
-                    if (similarityCoeff < 0.05)
+                    var orderedStandart = orderedStandarts.FirstOrDefault();
+                    if (similarityCoeff < 0.1)
                     {
-                        worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                        worstBag.TryAdd((garbageDataItem, orderedStandart.Key), Math.Round(orderedStandart.Value, 3));
                     }
-                    else if (similarityCoeff < 0.6)
-                        midBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                    else if (similarityCoeff < 0.95)
+                        midBag.TryAdd(garbageDataItem, a);
                     else
-                        bestBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
+                    {
+                        if (a.ContainsValue(1))
+                        {
+                            bestBag.TryAdd(garbageDataItem, new Dictionary<TStandart, double>() { { orderedStandart.Key, orderedStandart.Value } });
+                        }
+                        else
+                        {
+                            bestBag.TryAdd(garbageDataItem, a);
+                        }
+                    }
                 }               
                 if (currentProgress % 10 == 0)
                 {
@@ -186,13 +237,13 @@ namespace Algo.Algotithms
             {
                 worst.Add((item, standart), bestValue);
             }
-            foreach (var ((item, standart), bestValue) in midBag)
+            foreach (var (item, standart) in midBag)
             {
-                mid.Add((item, standart), bestValue);
+                mid.Add(item, standart);
             }
-            foreach (var ((item, standart), bestValue) in bestBag)
+            foreach (var (item, standart) in bestBag)
             {
-                best.Add((item, standart), bestValue);
+                best.Add(item, standart);
             }
             progressStrategy.UpdateProgress(new Models.Progress { Step = "Алгоритм завершил свою работу. Ожидайте записи результатов обработки в файл", CurrentProgress = 100 });
             return (worst, mid, best);
