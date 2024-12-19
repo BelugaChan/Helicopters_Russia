@@ -131,14 +131,13 @@ namespace Algo.Algotithms
                     dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName, garbageDataGosts));
                     //worstBag.TryAdd((garbageDataItem, bestStandart), Math.Round(similarityCoeff, 3));
                 }
-                else if (similarityCoeff < 0.95)
+                else if (similarityCoeff < 1)
                     midBag.TryAdd(garbageDataItem, a/*orderedStandarts*/);
                 else
                 {
-                    //var orderedStandart = orderedStandarts.FirstOrDefault();
-                    if (a.ContainsValue(1))
-                    {
-                        var orderedStandart = a.FirstOrDefault();
+                    var orderedStandart = a.FirstOrDefault();
+                    if (Math.Round(orderedStandart.Value) == 1)
+                    {                       
                         bestBag.TryAdd(garbageDataItem, new Dictionary<TStandart, double>() { {orderedStandart.Key,orderedStandart.Value } });
                     }
                     else
@@ -208,7 +207,7 @@ namespace Algo.Algotithms
                     {
                         worstBag.TryAdd((garbageDataItem, orderedStandart.Key), Math.Round(orderedStandart.Value, 3));
                     }
-                    else if (similarityCoeff < 0.95)
+                    else if (similarityCoeff < 1)
                         midBag.TryAdd(garbageDataItem, a);
                     else
                     {
