@@ -52,7 +52,7 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<IUpdatedEntityFactoryGarbageData<GarbageData>, GarbageDataFactory>();
             builder.Services.AddSingleton<IUpdatedEntityFactoryStandart<Standart>, StandartFactory>();
             builder.Services.AddSingleton<IENSHandler, ENSHandler>();
-            builder.Services.AddSingleton(provider => new Cosine(3));
+            builder.Services.AddSingleton(provider => new Cosine(2));
             builder.Services.AddSingleton(provider => 
             {
                 var registry = new ENSHandlerRegistry();
@@ -65,7 +65,8 @@ namespace Helicopters_Russia
                 registry.RegisterHandler(["Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов"], new Func<string, string>((str) => new BarsAndTiresHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"], new Func<string, string>((str) => new PipesHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Шайбы"], new Func<string, string>((str) => new WashersHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Катанка, проволока", "Катанка, проволока из меди и сплавов"], new Func<string, string>((str) => new RodHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Катанка, проволока из меди и сплавов"], new Func<string, string>((str) => new RodCopperHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Катанка, проволока"], new Func<string, string>((str) => new RodHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Шурупы"], new Func<string, string>((str) => new ScrewsHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Припои (прутки, проволока, трубки)"], new Func<string, string>((str) => new SoldersHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Гвозди, Дюбели"], new Func<string, string>((str) => new NailsHandler().AdditionalStringHandle(str)));
@@ -73,6 +74,8 @@ namespace Helicopters_Russia
                 registry.RegisterHandler(["Круги, шестигранники, квадраты"], new Func<string, string>((str) => new CirclesHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Части соединительные"], new Func<string, string>((str) => new ConnectionPartsHandler().AdditionalStringHandle(str)));
                 registry.RegisterHandler(["Листы, плиты, ленты из титана и сплавов"], new Func<string, string>((str) => new SheetsAndPlatesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Трубки изоляционные гибкие"], new Func<string, string>((str) => new InsulatingTubesHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(["Заклепки"], new Func<string, string>((str) => new RivetsHandler().AdditionalStringHandle(str)));
                 return registry;
             });
             
