@@ -59,7 +59,7 @@ namespace Algo.Handlers.Standart
                         (handledGost.Length > 1) ? handledGost[1] : "",
                         (handledGost.Length > 0) ? handledGost[0] : "",
                         standartItem.ENSClassification),
-                    eNSHandler.BaseStringHandle(/*standartItem.Name*/itemNameWithRemovedGosts)
+                    eNSHandler.BaseStringHandle(itemNameWithRemovedGosts)
                     );
                 currentProgress = Interlocked.Increment(ref currentProgress);
                 UpdateProgress(currentProgress, standarts.Count);

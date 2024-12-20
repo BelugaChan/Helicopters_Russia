@@ -10,7 +10,5 @@ namespace Algo.Interfaces.Algorithms
         (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, Dictionary<TStandart,double>> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
-
-        double GetProgress();
     }
 }

@@ -22,9 +22,5 @@ namespace Algo.Abstract
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
 
-        public double GetProgress() 
-        {
-            return (double)currentProgress * 100 / totalGarbageDataItems;
-        }
     }
 }

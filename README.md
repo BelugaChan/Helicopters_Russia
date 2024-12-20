@@ -88,7 +88,7 @@ string savePath = @"some_path_to_report";
 ```
 await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, savePath);
 ```
-*Получение процента выполнения алгоритма (на стадии тестирования)*
+*Получение данных о стадии обработки и проценте выполнения алгоритма (на стадии тестирования)*
 ```
 var progress = progressStrategy.GetCurrentProgress();
 ```
