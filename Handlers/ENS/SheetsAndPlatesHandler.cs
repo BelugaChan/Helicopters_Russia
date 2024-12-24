@@ -20,15 +20,6 @@ namespace Algo.Handlers.ENS
         {
             var res = stopWordsStrategy.RemoveWords(str, stopWords);
             return res;
-            //StringBuilder stringBuilder = new StringBuilder();
-            //var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
-
-            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            //for (int i = 0; i < filteredTokens.Count; i++)
-            //{
-            //    stringBuilder.Append($"{filteredTokens[i]} ");
-            //}
-            //return stringBuilder.ToString().TrimEnd(' ');
         }
     }
 }

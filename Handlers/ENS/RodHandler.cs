@@ -30,11 +30,6 @@ namespace Algo.Handlers.ENS
             }
             var res = replacementsStrategy.ReplaceItems(str, rodsReplacements);
             return res;
-            //foreach (var pair in rodsReplacements)
-            //{
-            //    str = str.Replace(pair.Key, pair.Value);
-            //}
-            //return str;
         }
     }
 }

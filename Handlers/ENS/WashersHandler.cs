@@ -24,11 +24,6 @@ namespace Algo.Handlers.ENS
         {
             var res = replacementsStrategy.ReplaceItems(str, washersReplacements);
             return res;
-            //foreach (var pair in washersReplacements)
-            //{
-            //    str = Regex.Replace(str, pair.Key, pair.Value);
-            //}
-            //return str;
         }
     }
 }

@@ -22,11 +22,6 @@ namespace Algo.Handlers.ENS
         {
             var res = replacementsStrategy.ReplaceItems(str, wiresReplacements);
             return res;
-            //foreach (var pair in wiresReplacements)
-            //{
-            //    str = str.Replace(pair.Key, pair.Value);
-            //}
-            //return str;
         }
     }
 }

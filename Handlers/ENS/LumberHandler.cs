@@ -22,11 +22,6 @@ namespace Algo.Handlers.ENS
         {
             var res = replacementsStrategy.ReplaceItems(str,lumberReplacements); 
             return res;
-            //foreach (var pair in lumberReplacements)
-            //{
-            //    str = str.Replace(pair.Key, pair.Value);
-            //}
-            //return str;
         }
     }
 }

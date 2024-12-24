@@ -44,26 +44,6 @@ namespace Algo.Handlers.ENS
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
-            //StringBuilder stringBuilder = new StringBuilder();
-
-            //foreach (var pair in circleRegex)
-            //{
-            //    str = Regex.Replace(str, pair.Key, pair.Value);
-            //}
-
-            //foreach (var pair in circleReplacements)
-            //{
-            //    str = str.Replace(pair.Key, pair.Value);
-            //}
-
-            //var tokens = str.Split(new[] { ' ', '/', '.'}, StringSplitOptions.RemoveEmptyEntries);
-
-            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            //for (int i = 0; i < filteredTokens.Count; i++)
-            //{
-            //    stringBuilder.Append($"{filteredTokens[i]} ");
-            //}
-            //return stringBuilder.ToString().TrimEnd(' ');
         }
     }
 }

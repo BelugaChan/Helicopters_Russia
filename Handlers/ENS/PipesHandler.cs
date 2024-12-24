@@ -34,21 +34,6 @@ namespace Algo.Handlers.ENS
             var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);
             var final = stopWordsStrategy.RemoveWords(midRes, stopWords);
             return final;
-            //StringBuilder stringBuilder = new StringBuilder();
-
-            //foreach (var pair in barsReplacements)
-            //{
-            //    str = str.Replace(pair.Key, pair.Value);
-            //}
-
-            //var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
-
-            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            //for (int i = 0; i < filteredTokens.Count; i++)
-            //{
-            //    stringBuilder.Append($"{filteredTokens[i]} ");
-            //}
-            //return stringBuilder.ToString().TrimEnd(' ');
         }
     }
 }
