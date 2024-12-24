@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,23 +22,33 @@ namespace Algo.Handlers.ENS
         {
             { "ТРУБА ТР","ТРУБА " },
         };
+        private IReplacementsStrategy replacementsStrategy;
+        private IStopWordsStrategy stopWordsStrategy;
+        public PipesHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+            this.stopWordsStrategy = stopWordsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
-            StringBuilder stringBuilder = new StringBuilder();
+            var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);
+            var final = stopWordsStrategy.RemoveWords(midRes, stopWords);
+            return final;
+            //StringBuilder stringBuilder = new StringBuilder();
 
-            foreach (var pair in barsReplacements)
-            {
-                str = str.Replace(pair.Key, pair.Value);
-            }
+            //foreach (var pair in barsReplacements)
+            //{
+            //    str = str.Replace(pair.Key, pair.Value);
+            //}
 
-            var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            //var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
 
-            var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            for (int i = 0; i < filteredTokens.Count; i++)
-            {
-                stringBuilder.Append($"{filteredTokens[i]} ");
-            }
-            return stringBuilder.ToString().TrimEnd(' ');
+            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
+            //for (int i = 0; i < filteredTokens.Count; i++)
+            //{
+            //    stringBuilder.Append($"{filteredTokens[i]} ");
+            //}
+            //return stringBuilder.ToString().TrimEnd(' ');
         }
     }
 }

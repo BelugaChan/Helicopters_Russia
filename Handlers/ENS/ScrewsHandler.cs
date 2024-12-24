@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 using System.Text;
 
 namespace Algo.Handlers.ENS
@@ -14,23 +15,33 @@ namespace Algo.Handlers.ENS
         {
             { "БЕ 3 ","" }
         };
+        private IReplacementsStrategy replacementsStrategy;
+        private IStopWordsStrategy stopWordsStrategy;
+        public ScrewsHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+            this.stopWordsStrategy = stopWordsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
-            StringBuilder stringBuilder = new StringBuilder();
+            var mid = replacementsStrategy.ReplaceItems(str, screwsReplacements);
+            var final = stopWordsStrategy.RemoveWords(mid, stopWords);
+            return final;
+            //StringBuilder stringBuilder = new StringBuilder();
 
-            foreach (var pair in screwsReplacements)
-            {
-                str = str.Replace(pair.Key, pair.Value);
-            }
+            //foreach (var pair in screwsReplacements)
+            //{
+            //    str = str.Replace(pair.Key, pair.Value);
+            //}
 
-            var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
+            //var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
 
-            var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            for (int i = 0; i < filteredTokens.Count; i++)
-            {
-                stringBuilder.Append($"{filteredTokens[i]} ");
-            }
-            return stringBuilder.ToString().TrimEnd(' ');
+            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
+            //for (int i = 0; i < filteredTokens.Count; i++)
+            //{
+            //    stringBuilder.Append($"{filteredTokens[i]} ");
+            //}
+            //return stringBuilder.ToString().TrimEnd(' ');
         }
     }
 }

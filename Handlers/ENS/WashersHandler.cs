@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -14,15 +15,20 @@ namespace Algo.Handlers.ENS
         {
             { @"\s\d{9}$","" },
         };
+        private IReplacementsStrategy replacementsStrategy;
+        public WashersHandler(IReplacementsStrategy replacementsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
-            StringBuilder stringBuilder = new StringBuilder();
-
-            foreach (var pair in washersReplacements)
-            {
-                str = Regex.Replace(str, pair.Key, pair.Value);
-            }
-            return str;
+            var res = replacementsStrategy.ReplaceItems(str, washersReplacements);
+            return res;
+            //foreach (var pair in washersReplacements)
+            //{
+            //    str = Regex.Replace(str, pair.Key, pair.Value);
+            //}
+            //return str;
         }
     }
 }

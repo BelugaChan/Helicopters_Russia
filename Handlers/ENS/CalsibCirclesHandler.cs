@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -28,28 +29,41 @@ namespace Algo.Handlers.ENS
             { @"\bШГ\s*\d+","ШЕСТГРАННИК" },
             { @"\bВ\s*Н\s*(\d+)\s*АТП?\s*Ф?\s*(\d+)\b", @"Н $1 НД $2" }
         };
+        private IReplacementsStrategy replacementsStrategy;
+        private IRegexReplacementStrategy regexReplacementStrategy;
+        private IStopWordsStrategy stopWordsStrategy;
+        public CalsibCirclesHandler(IReplacementsStrategy replacementsStrategy, IRegexReplacementStrategy regexReplacementStrategy, IStopWordsStrategy stopWordsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+            this.regexReplacementStrategy = regexReplacementStrategy;
+            this.stopWordsStrategy = stopWordsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
-            StringBuilder stringBuilder = new StringBuilder();
+            var replaced = replacementsStrategy.ReplaceItems(str, circleReplacements);
+            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
+            var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
+            return final;
+            //StringBuilder stringBuilder = new StringBuilder();
 
-            foreach (var pair in circleRegex)
-            {
-                str = Regex.Replace(str, pair.Key, pair.Value);
-            }
+            //foreach (var pair in circleRegex)
+            //{
+            //    str = Regex.Replace(str, pair.Key, pair.Value);
+            //}
 
-            foreach (var pair in circleReplacements)
-            {
-                str = str.Replace(pair.Key, pair.Value);
-            }
+            //foreach (var pair in circleReplacements)
+            //{
+            //    str = str.Replace(pair.Key, pair.Value);
+            //}
 
-            var tokens = str.Split(new[] { ' ', '/', '.'}, StringSplitOptions.RemoveEmptyEntries);
-            
-            var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            for (int i = 0; i < filteredTokens.Count; i++)
-            {
-                stringBuilder.Append($"{filteredTokens[i]} ");
-            }
-            return stringBuilder.ToString().TrimEnd(' ');
+            //var tokens = str.Split(new[] { ' ', '/', '.'}, StringSplitOptions.RemoveEmptyEntries);
+
+            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
+            //for (int i = 0; i < filteredTokens.Count; i++)
+            //{
+            //    stringBuilder.Append($"{filteredTokens[i]} ");
+            //}
+            //return stringBuilder.ToString().TrimEnd(' ');
         }
     }
 }

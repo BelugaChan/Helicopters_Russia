@@ -214,7 +214,7 @@ namespace Algo.Algotithms
         public Dictionary<TStandart, double> GetBestStandarts<TStandart>(Dictionary<TStandart, double> bestStandart)
         {
             bool addedFirst = false;
-            var orderedStandarts = bestStandart.OrderByDescending(t => t.Value).Take(3);
+            var orderedStandarts = bestStandart.OrderByDescending(t => t.Value).Take(20);
             return orderedStandarts.Where((kvp, index) =>
             {
                 if (index < orderedStandarts.Count() - 1)

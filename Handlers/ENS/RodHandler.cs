@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -16,17 +17,24 @@ namespace Algo.Handlers.ENS
         {
             { "ПРОВОЛОКА", "ПРВ" },
         };
+        private IReplacementsStrategy replacementsStrategy;
+        public RodHandler(IReplacementsStrategy replacementsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
             if (Regex.IsMatch(str,pattern))
             {
                 str = "ОЛОВО " + str;
             }
-            foreach (var pair in rodsReplacements)
-            {
-                str = str.Replace(pair.Key, pair.Value);
-            }
-            return str;
+            var res = replacementsStrategy.ReplaceItems(str, rodsReplacements);
+            return res;
+            //foreach (var pair in rodsReplacements)
+            //{
+            //    str = str.Replace(pair.Key, pair.Value);
+            //}
+            //return str;
         }
     }
 }

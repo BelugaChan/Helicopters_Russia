@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 
 namespace Algo.Handlers.ENS
 {
@@ -12,14 +13,21 @@ namespace Algo.Handlers.ENS
             { "В С ","ВЫСШИЙ СОРТ " },
             {"ТРУБКА", "ТРУБКИ" }
         };
+        private IReplacementsStrategy replacementsStrategy;
+        public InsulatingTubesHandler(IReplacementsStrategy replacementsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
-            foreach (var pair in tubesReplacements)
-            {
-                str = str.Replace(pair.Key, pair.Value);
-            }
+            var res = replacementsStrategy.ReplaceItems(str, tubesReplacements);
+            return res;
+            //foreach (var pair in tubesReplacements)
+            //{
+            //    str = str.Replace(pair.Key, pair.Value);
+            //}
 
-            return str;
+            //return str;
         }
     }
 }

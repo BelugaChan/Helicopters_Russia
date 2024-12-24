@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Interfaces.ProgressStrategy;
 
 namespace Algo.Handlers.ENS
 {   
@@ -11,13 +12,21 @@ namespace Algo.Handlers.ENS
         {
             { "КАБЕЛЬ","ПРОВОД" }
         };
+        private IReplacementsStrategy replacementsStrategy;
+
+        public MountingWiresHandler(IReplacementsStrategy replacementsStrategy)
+        {
+            this.replacementsStrategy = replacementsStrategy;
+        }
         public string AdditionalStringHandle(string str)
         {
-            foreach (var pair in wiresReplacements)
-            {
-                str = str.Replace(pair.Key, pair.Value);
-            }
-            return str;
+            var res = replacementsStrategy.ReplaceItems(str, wiresReplacements);
+            return res;
+            //foreach (var pair in wiresReplacements)
+            //{
+            //    str = str.Replace(pair.Key, pair.Value);
+            //}
+            //return str;
         }
     }
 }
