@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class RodCopperHandler : IAdditionalENSHandler<RodHandler>
+    public class RodCopperHandler : IAdditionalENSHandler<RodCopperHandler>
     {
         /// <summary>
         /// Катанка, проволока из меди и сплавов
