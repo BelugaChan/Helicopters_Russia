@@ -46,11 +46,13 @@ public class FileProcessingService(
 
             Pullenti.Sdk.InitializeAll();
             var algoresult = algoFacade.AlgoWrap(standarts, garbageData);
-
+            Console.WriteLine($"matched: {algoresult.MatchedData.Count}");
+            Console.WriteLine($"unmatched: {algoresult.UnmatchedGarbageData.Count}");
             // Вычисляем коэффициенты схожести и разделяем на категории
             var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
                 similarityCalculator.CalculateCoefficent(algoresult));
-
+            Console.WriteLine($"mid: {mid.Count}");
+            Console.WriteLine($"best: {best.Count}");
             //Записываем результаты в Excel
             await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);
         }

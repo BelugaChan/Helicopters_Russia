@@ -11,6 +11,7 @@ using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.Handlers.GOST;
 using Algo.Interfaces.Handlers.Standart;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.MethodStrategy;
 using Algo.Models;
 using Algo.ProgressStrategy;
 using Algo.Registry;
@@ -53,29 +54,185 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<IUpdatedEntityFactoryStandart<Standart>, StandartFactory>();
             builder.Services.AddSingleton<IENSHandler, ENSHandler>();
             builder.Services.AddSingleton(provider => new Cosine(2));
+            builder.Services.AddSingleton<IReplacementsStrategy, ReplacementsStrategy>();
+            builder.Services.AddSingleton<IRegexReplacementStrategy, RegexReplacementsStrategy>();
+            builder.Services.AddSingleton<IStopWordsStrategy, StopWordsStrategy>();
+
+            builder.Services.AddTransient<IAdditionalENSHandler<CalsibCirclesHandler>,CalsibCirclesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<LumberHandler>, LumberHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<RopesAndCablesHandler>, RopesAndCablesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<MountingWiresHandler>, MountingWiresHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<WireHandler>, WireHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<BarsAndTiresHandler>, BarsAndTiresHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<PipesHandler>, PipesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<WashersHandler>, WashersHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<RodCopperHandler>, RodCopperHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<RodHandler>, RodHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<ScrewsHandler>, ScrewsHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<SoldersHandler>, SoldersHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<NailsHandler>, NailsHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<TapesHandler>, TapesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<CirclesHandler>, CirclesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<SheetsAndPlatesHandler>, SheetsAndPlatesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<InsulatingTubesHandler>, InsulatingTubesHandler>();
+            builder.Services.AddTransient<IAdditionalENSHandler<RivetsHandler>, RivetsHandler>();
+
             builder.Services.AddSingleton(provider => 
             {
                 var registry = new ENSHandlerRegistry();
 
-                registry.RegisterHandler(["Калиброванные круги, шестигранники, квадраты"], new Func<string, string>((str) => new CalsibCirclesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Пиломатериалы"], new Func<string, string>((str) => new LumberHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Канаты, Тросы"], new Func<string, string>((str) => new RopesAndCablesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Провода монтажные"], new Func<string, string>((str) => new MountingWiresHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Проволока"], new Func<string, string>((str) => new WireHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов"], new Func<string, string>((str) => new BarsAndTiresHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"], new Func<string, string>((str) => new PipesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Шайбы"], new Func<string, string>((str) => new WashersHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Катанка, проволока из меди и сплавов"], new Func<string, string>((str) => new RodCopperHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Катанка, проволока"], new Func<string, string>((str) => new RodHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Шурупы"], new Func<string, string>((str) => new ScrewsHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Припои (прутки, проволока, трубки)"], new Func<string, string>((str) => new SoldersHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Гвозди, Дюбели"], new Func<string, string>((str) => new NailsHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Ленты, широкополосный прокат"], new Func<string, string>((str) => new TapesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Круги, шестигранники, квадраты"], new Func<string, string>((str) => new CirclesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Части соединительные"], new Func<string, string>((str) => new ConnectionPartsHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Листы, плиты, ленты из титана и сплавов"], new Func<string, string>((str) => new SheetsAndPlatesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Трубки изоляционные гибкие"], new Func<string, string>((str) => new InsulatingTubesHandler().AdditionalStringHandle(str)));
-                registry.RegisterHandler(["Заклепки"], new Func<string, string>((str) => new RivetsHandler().AdditionalStringHandle(str)));
+                registry.RegisterHandler(
+                    ["Калиброванные круги, шестигранники, квадраты"], 
+                    str => 
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<CalsibCirclesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Пиломатериалы"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<LumberHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Канаты, Тросы"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<RopesAndCablesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Провода монтажные"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<MountingWiresHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Проволока"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<WireHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<BarsAndTiresHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<PipesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Шайбы"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<WashersHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Катанка, проволока из меди и сплавов"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<RodCopperHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Катанка, проволока"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<RodHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Шурупы"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<ScrewsHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Припои (прутки, проволока, трубки)"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<SoldersHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Гвозди, Дюбели"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<NailsHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Ленты, широкополосный прокат"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<TapesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Круги, шестигранники, квадраты"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<CirclesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Части соединительные"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<ConnectionPartsHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Листы, плиты, ленты из титана и сплавов"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<SheetsAndPlatesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Трубки изоляционные гибкие"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<InsulatingTubesHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
+                registry.RegisterHandler(
+                    ["Заклепки"],
+                    str =>
+                    {
+                        var handler = ActivatorUtilities.CreateInstance<RivetsHandler>(provider);
+                        return handler.AdditionalStringHandle(str);
+                    });
+
                 return registry;
             });
             
