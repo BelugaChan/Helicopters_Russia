@@ -25,9 +25,11 @@ namespace Algo.Handlers.ENS
             {"ПР", "ПРОВОЛОКА" },
             {"ПРВ", "ПРОВОЛОКА" }
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IRegexReplacementStrategy regexReplacementStrategy;
         private IStopWordsStrategy stopWordsStrategy;
+
         public WireHandler(IReplacementsStrategy replacementsStrategy, IRegexReplacementStrategy regexReplacementStrategy, IStopWordsStrategy stopWordsStrategy)
         {
             this.replacementsStrategy = replacementsStrategy;
@@ -37,9 +39,10 @@ namespace Algo.Handlers.ENS
         public string AdditionalStringHandle(string str)
         {
             var replaced = replacementsStrategy.ReplaceItems(str, wireReplacements);
-            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced,regexReplacements,RegexOptions.IgnoreCase);
+            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, regexReplacements, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
+
         }
     }
 }

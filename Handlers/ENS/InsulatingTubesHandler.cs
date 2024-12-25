@@ -13,6 +13,7 @@ namespace Algo.Handlers.ENS
             { "В С ","ВЫСШИЙ СОРТ " },
             {"ТРУБКА", "ТРУБКИ" }
         };
+
         private IReplacementsStrategy replacementsStrategy;
         public InsulatingTubesHandler(IReplacementsStrategy replacementsStrategy)
         {
@@ -22,6 +23,7 @@ namespace Algo.Handlers.ENS
         {
             var res = replacementsStrategy.ReplaceItems(str, tubesReplacements);
             return res;
+
         }
     }
 }

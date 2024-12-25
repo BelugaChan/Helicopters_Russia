@@ -15,6 +15,7 @@ namespace Algo.Handlers.ENS
         {
             { "КОНТРАГАЙКА ", "КОНТРГАЙКА "},
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IStopWordsStrategy stopWordsStrategy;
         public ConnectionPartsHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
@@ -27,21 +28,7 @@ namespace Algo.Handlers.ENS
             var midRes = replacementsStrategy.ReplaceItems(str, connectionReplacements);
             var final = stopWordsStrategy.RemoveWords(midRes, stopWords);
             return final;
-            //StringBuilder sb = new StringBuilder();
 
-            //foreach (var pair in connectionReplacements)
-            //{
-            //    str = str.Replace(pair.Key, pair.Value);
-            //}
-
-            //var tokens = str.Split(new[] { ' ', '/', '.' }, StringSplitOptions.RemoveEmptyEntries);
-
-            //var filteredTokens = tokens.Where(token => !stopWords.Contains(token)).ToList();
-            //for (int i = 0; i < filteredTokens.Count; i++)
-            //{
-            //    sb.Append($"{filteredTokens[i]} ");
-            //}
-            //return sb.ToString().TrimEnd(' ');
         }
     }
 }

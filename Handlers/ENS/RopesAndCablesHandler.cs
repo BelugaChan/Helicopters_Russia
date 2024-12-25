@@ -18,8 +18,9 @@ namespace Algo.Handlers.ENS
         }
         public string AdditionalStringHandle(string str)
         {
-            var res = stopWordsStrategy.RemoveWords(str, stopWords); 
+            var res = stopWordsStrategy.RemoveWords(str, stopWords);
             return res;
+
         }
     }
 }

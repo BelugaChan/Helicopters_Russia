@@ -15,6 +15,7 @@ namespace Algo.Handlers.ENS
         {
             { @"\s\d{9}$","" },
         };
+
         private IReplacementsStrategy replacementsStrategy;
         public WashersHandler(IReplacementsStrategy replacementsStrategy)
         {
@@ -24,6 +25,7 @@ namespace Algo.Handlers.ENS
         {
             var res = replacementsStrategy.ReplaceItems(str, washersReplacements);
             return res;
+
         }
     }
 }

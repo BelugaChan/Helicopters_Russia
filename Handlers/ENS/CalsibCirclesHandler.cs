@@ -29,6 +29,7 @@ namespace Algo.Handlers.ENS
             { @"\bШГ\s*\d+","ШЕСТГРАННИК" },
             { @"\bВ\s*Н\s*(\d+)\s*АТП?\s*Ф?\s*(\d+)\b", @"Н $1 НД $2" }
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IRegexReplacementStrategy regexReplacementStrategy;
         private IStopWordsStrategy stopWordsStrategy;
@@ -44,6 +45,7 @@ namespace Algo.Handlers.ENS
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
+
         }
     }
 }

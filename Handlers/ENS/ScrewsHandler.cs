@@ -15,6 +15,7 @@ namespace Algo.Handlers.ENS
         {
             { "БЕ 3 ","" }
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IStopWordsStrategy stopWordsStrategy;
         public ScrewsHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
@@ -27,6 +28,7 @@ namespace Algo.Handlers.ENS
             var mid = replacementsStrategy.ReplaceItems(str, screwsReplacements);
             var final = stopWordsStrategy.RemoveWords(mid, stopWords);
             return final;
+
         }
     }
 }

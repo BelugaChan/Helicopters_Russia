@@ -15,6 +15,7 @@ namespace Algo.Handlers.ENS
         {
             { "ПРВ КР", "ПРВКР" },
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IStopWordsStrategy stopWordsStrategy;
         public SoldersHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
@@ -28,6 +29,7 @@ namespace Algo.Handlers.ENS
             var mid = replacementsStrategy.ReplaceItems(str, soldersReplacements);
             var final = stopWordsStrategy.RemoveWords(mid, stopWords);
             return final;
+
         }
     }
 }

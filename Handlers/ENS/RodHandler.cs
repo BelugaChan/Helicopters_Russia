@@ -17,6 +17,7 @@ namespace Algo.Handlers.ENS
         {
             { "ПРОВОЛОКА", "ПРВ" },
         };
+
         private IReplacementsStrategy replacementsStrategy;
         public RodHandler(IReplacementsStrategy replacementsStrategy)
         {
@@ -24,7 +25,7 @@ namespace Algo.Handlers.ENS
         }
         public string AdditionalStringHandle(string str)
         {
-            if (Regex.IsMatch(str,pattern))
+            if (Regex.IsMatch(str, pattern))
             {
                 str = "ОЛОВО " + str;
             }

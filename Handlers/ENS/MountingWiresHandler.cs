@@ -12,6 +12,7 @@ namespace Algo.Handlers.ENS
         {
             { "КАБЕЛЬ","ПРОВОД" }
         };
+
         private IReplacementsStrategy replacementsStrategy;
 
         public MountingWiresHandler(IReplacementsStrategy replacementsStrategy)
@@ -22,6 +23,7 @@ namespace Algo.Handlers.ENS
         {
             var res = replacementsStrategy.ReplaceItems(str, wiresReplacements);
             return res;
+
         }
     }
 }

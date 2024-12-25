@@ -25,7 +25,8 @@ namespace Algo.Facade
 
         //Основной метод
         public AlgoResult<TStandart,TGarbageData> AlgoWrap(HashSet<TStandart> standarts, HashSet<TGarbageData> garbageData)
-        {           
+        {
+            Console.WriteLine($"standarts: {standarts.Count}\ngarbage: {garbageData.Count}");
             var processedGarbageData = ProcessedGarbageData(garbageData);
 
             var processedStandarts = ProcessedStandarts(standarts);//абсолютно все стандарты

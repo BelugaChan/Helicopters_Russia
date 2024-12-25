@@ -22,6 +22,7 @@ namespace Algo.Handlers.ENS
         {
             { "ТРУБА ТР","ТРУБА " },
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IStopWordsStrategy stopWordsStrategy;
         public PipesHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
@@ -34,6 +35,7 @@ namespace Algo.Handlers.ENS
             var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);
             var final = stopWordsStrategy.RemoveWords(midRes, stopWords);
             return final;
+
         }
     }
 }

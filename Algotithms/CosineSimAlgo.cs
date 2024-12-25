@@ -152,6 +152,7 @@ namespace Algo.Algotithms
                 
 
                 LogProgress(100, matchedData.Count,ref currentProgress, "3. Базовый прогон алгоритма Cosine");
+                Console.WriteLine($"Main run: midBag: {midBag.Count} bestBag: {bestBag.Count}");
             });
         }
 
@@ -194,6 +195,7 @@ namespace Algo.Algotithms
                     
                 }
                 LogProgress(10, dataForPostProcessing.Count,ref currentProgress, "4. Дополнительный прогон алгоритма Cosine");
+                Console.WriteLine($"Default run: midBag: {midBag.Count} bestBag: {bestBag.Count}");
             });
         }
 

@@ -22,6 +22,7 @@ namespace Algo.Handlers.ENS
             { @"ГР\s*\d{1,2}", ""},
             { @"Ф\s*(\d+)", @"НД $1"}
         };
+
         private IReplacementsStrategy replacementsStrategy;
         private IRegexReplacementStrategy regexReplacementStrategy;
         private IStopWordsStrategy stopWordsStrategy;
@@ -37,6 +38,7 @@ namespace Algo.Handlers.ENS
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
+
         }
     }
 }

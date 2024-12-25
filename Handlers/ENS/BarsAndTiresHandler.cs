@@ -24,6 +24,7 @@ namespace Algo.Handlers.ENS
         {
             var res = stopWordsStrategy.RemoveWords(str, stopWords);
             return res;
+
         }
     }
 }

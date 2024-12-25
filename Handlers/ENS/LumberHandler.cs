@@ -13,6 +13,7 @@ namespace Algo.Handlers.ENS
             { "ХВОЙН","ХВ" },
             { "ХВОЙНЫЙ","ХВ" },
         };
+
         private IReplacementsStrategy replacementsStrategy;
         public LumberHandler(IReplacementsStrategy replacementsStrategy)
         {
@@ -20,8 +21,9 @@ namespace Algo.Handlers.ENS
         }
         public string AdditionalStringHandle(string str)
         {
-            var res = replacementsStrategy.ReplaceItems(str,lumberReplacements); 
+            var res = replacementsStrategy.ReplaceItems(str, lumberReplacements);
             return res;
+
         }
     }
 }
