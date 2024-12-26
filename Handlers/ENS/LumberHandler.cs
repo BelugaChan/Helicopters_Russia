@@ -3,7 +3,7 @@ using Algo.Interfaces.ProgressStrategy;
 
 namespace Algo.Handlers.ENS
 {
-    public class LumberHandler :  IAdditionalENSHandler<LumberHandler>
+    public class LumberHandler :  IAdditionalENSHandler
     {
         /// <summary>
         /// Пиломатериалы
@@ -19,6 +19,7 @@ namespace Algo.Handlers.ENS
         {
             this.replacementsStrategy = replacementsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Пиломатериалы" };
         public string AdditionalStringHandle(string str)
         {
             var res = replacementsStrategy.ReplaceItems(str, lumberReplacements);

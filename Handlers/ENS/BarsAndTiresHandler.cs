@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Algo.Handlers.ENS
 {
-    public class BarsAndTiresHandler : IAdditionalENSHandler<BarsAndTiresHandler>
+    public class BarsAndTiresHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Прутки, шины из алюминия и сплавов
@@ -20,6 +20,9 @@ namespace Algo.Handlers.ENS
         {
             this.stopWordsStrategy = stopWordsStrategy;
         }
+
+        public IEnumerable<string> SupportedKeys => new[] { "Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов" };
+
         public string AdditionalStringHandle(string str)
         {
             var res = stopWordsStrategy.RemoveWords(str, stopWords);

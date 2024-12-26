@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class PipesHandler : IAdditionalENSHandler<PipesHandler>
+    public class PipesHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Трубы бесшовные
@@ -30,6 +30,7 @@ namespace Algo.Handlers.ENS
             this.replacementsStrategy = replacementsStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов" };
         public string AdditionalStringHandle(string str)
         {
             var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);

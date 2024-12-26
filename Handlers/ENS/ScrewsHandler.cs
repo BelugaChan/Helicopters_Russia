@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Algo.Handlers.ENS
 {
-    public class ScrewsHandler : IAdditionalENSHandler<ScrewsHandler>
+    public class ScrewsHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Шурупы
@@ -23,6 +23,7 @@ namespace Algo.Handlers.ENS
             this.replacementsStrategy = replacementsStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Шурупы" };
         public string AdditionalStringHandle(string str)
         {
             var mid = replacementsStrategy.ReplaceItems(str, screwsReplacements);

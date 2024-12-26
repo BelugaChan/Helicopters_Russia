@@ -35,7 +35,7 @@ namespace Algo.Algotithms
         //основной алгоритм в данном классе
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, Dictionary<TStandart, double>> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
         {
-            currentProgress = 0;          
+            currentProgress = 0;
 
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing = new();
 
@@ -70,7 +70,7 @@ namespace Algo.Algotithms
         {
             var handler = handlerRegistry.GetHandler(groupClassificationName);
             if (handler is not null)
-            {
+            {                
                 return handler(baseProcessedGarbageName);
             }
             return baseProcessedGarbageName;
@@ -107,13 +107,11 @@ namespace Algo.Algotithms
 
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName);//дефолтная обработка наименования грязной позиции, так же, как и для эталона
                 var tokens = GetTokensFromName(baseProcessedGarbageName, garbageDataGosts);
-
                 string improvedProcessedGarbageName = "";
                 var standartStuff = item.Matches; //сопоставленные группы эталонов для грязной позиции по ГОСТам
                 foreach (var standartGroups in standartStuff) //сравнение грязной строки со всеми позициями каждой из групп, где хотя бы в одном из элементов совпал гост с грязной позицией
                 {
                     var groupClassificationName = standartGroups.Key;
-
                     //персональные обработчики для классификаторов ЕНС
                     improvedProcessedGarbageName = SelectHandler(groupClassificationName, baseProcessedGarbageName);
                     foreach (var standart in standartGroups.Value) //стандарты в каждой отдельной группе
@@ -152,7 +150,6 @@ namespace Algo.Algotithms
                 
 
                 LogProgress(100, matchedData.Count,ref currentProgress, "3. Базовый прогон алгоритма Cosine");
-                Console.WriteLine($"Main run: midBag: {midBag.Count} bestBag: {bestBag.Count}");
             });
         }
 
@@ -195,7 +192,6 @@ namespace Algo.Algotithms
                     
                 }
                 LogProgress(10, dataForPostProcessing.Count,ref currentProgress, "4. Дополнительный прогон алгоритма Cosine");
-                Console.WriteLine($"Default run: midBag: {midBag.Count} bestBag: {bestBag.Count}");
             });
         }
 

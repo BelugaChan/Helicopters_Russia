@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Algo.Handlers.ENS
 {
-    public class SoldersHandler : IAdditionalENSHandler<SoldersHandler>
+    public class SoldersHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Припои (прутки, проволока, трубки)
@@ -24,6 +24,7 @@ namespace Algo.Handlers.ENS
             this.stopWordsStrategy = stopWordsStrategy;
         }
 
+        public IEnumerable<string> SupportedKeys => new[] { "Припои (прутки, проволока, трубки)" };
         public string AdditionalStringHandle(string str)
         {
             var mid = replacementsStrategy.ReplaceItems(str, soldersReplacements);

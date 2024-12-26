@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Algo.Handlers.ENS
 {
-    public class ConnectionPartsHandler : IAdditionalENSHandler<ConnectionPartsHandler>
+    public class ConnectionPartsHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Части соединительные
@@ -23,6 +23,7 @@ namespace Algo.Handlers.ENS
             this.replacementsStrategy = replacementsStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Части соединительные" };
         public string AdditionalStringHandle(string str)
         {
             var midRes = replacementsStrategy.ReplaceItems(str, connectionReplacements);

@@ -3,7 +3,7 @@ using Algo.Interfaces.ProgressStrategy;
 
 namespace Algo.Handlers.ENS
 {   
-    public class MountingWiresHandler : IAdditionalENSHandler<MountingWiresHandler>
+    public class MountingWiresHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Провода монтажные
@@ -19,6 +19,7 @@ namespace Algo.Handlers.ENS
         {
             this.replacementsStrategy = replacementsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Провода монтажные" };
         public string AdditionalStringHandle(string str)
         {
             var res = replacementsStrategy.ReplaceItems(str, wiresReplacements);

@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Algo.Handlers.ENS
 {
-    public class RopesAndCablesHandler : IAdditionalENSHandler<RopesAndCablesHandler>
+    public class RopesAndCablesHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Канаты, Тросы
@@ -16,6 +16,7 @@ namespace Algo.Handlers.ENS
         {
             this.stopWordsStrategy = stopWordsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Канаты, Тросы" };
         public string AdditionalStringHandle(string str)
         {
             var res = stopWordsStrategy.RemoveWords(str, stopWords);

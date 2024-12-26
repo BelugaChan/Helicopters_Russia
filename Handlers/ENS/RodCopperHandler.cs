@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class RodCopperHandler : IAdditionalENSHandler<RodCopperHandler>
+    public class RodCopperHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Катанка, проволока из меди и сплавов
@@ -16,5 +16,6 @@ namespace Algo.Handlers.ENS
         {
             return str;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Катанка, проволока из меди и сплавов" };
     }
 }

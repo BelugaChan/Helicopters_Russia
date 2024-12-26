@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
 {
-    public class WashersHandler : IAdditionalENSHandler<WashersHandler>
+    public class WashersHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Шайбы
@@ -21,6 +21,8 @@ namespace Algo.Handlers.ENS
         {
             this.replacementsStrategy = replacementsStrategy;
         }
+
+        public IEnumerable<string> SupportedKeys => new[] { "Шайбы" };
         public string AdditionalStringHandle(string str)
         {
             var res = replacementsStrategy.ReplaceItems(str, washersReplacements);

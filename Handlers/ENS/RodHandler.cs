@@ -4,11 +4,10 @@ using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
 {
-    public class RodHandler : IAdditionalENSHandler<RodHandler>
+    public class RodHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Катанка, проволока
-        /// Катанка, проволока из меди и сплавов
         /// </summary>
 
         private string pattern = @"О.*\b\d{1,2}\b";
@@ -23,6 +22,8 @@ namespace Algo.Handlers.ENS
         {
             this.replacementsStrategy = replacementsStrategy;
         }
+
+        public IEnumerable<string> SupportedKeys => new[] { "Катанка, проволока" };
         public string AdditionalStringHandle(string str)
         {
             if (Regex.IsMatch(str, pattern))

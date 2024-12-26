@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
 {
-    public class WireHandler : IAdditionalENSHandler<WireHandler>
+    public class WireHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Проволока
@@ -36,6 +36,8 @@ namespace Algo.Handlers.ENS
             this.regexReplacementStrategy = regexReplacementStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
+
+        public IEnumerable<string> SupportedKeys => new[] { "Проволока" };
         public string AdditionalStringHandle(string str)
         {
             var replaced = replacementsStrategy.ReplaceItems(str, wireReplacements);

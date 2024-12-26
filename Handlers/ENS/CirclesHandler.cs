@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
 {
-    public class CirclesHandler : IAdditionalENSHandler<CirclesHandler>
+    public class CirclesHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Круги, шестигранники, квадраты
@@ -32,6 +32,8 @@ namespace Algo.Handlers.ENS
             this.regexReplacementStrategy = regexReplacementStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
+
+        public IEnumerable<string> SupportedKeys => new[] { "Круги, шестигранники, квадраты" };
         public string AdditionalStringHandle(string str)
         {
             var replaced = replacementsStrategy.ReplaceItems(str, circleReplacements);

@@ -3,7 +3,7 @@ using Algo.Interfaces.ProgressStrategy;
 
 namespace Algo.Handlers.ENS
 {
-    public class InsulatingTubesHandler : IAdditionalENSHandler<InsulatingTubesHandler>
+    public class InsulatingTubesHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Трубки изоляционные гибкие
@@ -19,6 +19,9 @@ namespace Algo.Handlers.ENS
         {
             this.replacementsStrategy = replacementsStrategy;
         }
+
+        public IEnumerable<string> SupportedKeys => new[] { "Трубки изоляционные гибкие" };
+
         public string AdditionalStringHandle(string str)
         {
             var res = replacementsStrategy.ReplaceItems(str, tubesReplacements);

@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Algo.Handlers.ENS
 {
-    public class RivetsHandler : IAdditionalENSHandler<RivetsHandler>
+    public class RivetsHandler : IAdditionalENSHandler
     {
         /// <summary>
         /// Заклепки
@@ -22,6 +22,7 @@ namespace Algo.Handlers.ENS
         {
             this.stopWordsStrategy = stopWordsStrategy;
         }
+        public IEnumerable<string> SupportedKeys => new[] { "Заклепки" };
         public string AdditionalStringHandle(string str)
         {
             var res = stopWordsStrategy.RemoveWords(str, stopWords);
