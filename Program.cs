@@ -29,7 +29,7 @@ namespace Helicopters_Russia
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);
-           
+            builder.Logging.AddConsole();
             // Подключаем конфигурацию
             var configuration = builder.Configuration;
             builder.Services.Configure<BotConfiguration>(configuration.GetSection("BotConfiguration"));
@@ -58,184 +58,18 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<IRegexReplacementStrategy, RegexReplacementsStrategy>();
             builder.Services.AddSingleton<IStopWordsStrategy, StopWordsStrategy>();
 
-            builder.Services.AddTransient<IAdditionalENSHandler<CalsibCirclesHandler>,CalsibCirclesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<LumberHandler>, LumberHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<RopesAndCablesHandler>, RopesAndCablesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<MountingWiresHandler>, MountingWiresHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<WireHandler>, WireHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<BarsAndTiresHandler>, BarsAndTiresHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<PipesHandler>, PipesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<WashersHandler>, WashersHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<RodCopperHandler>, RodCopperHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<RodHandler>, RodHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<ScrewsHandler>, ScrewsHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<SoldersHandler>, SoldersHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<NailsHandler>, NailsHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<TapesHandler>, TapesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<CirclesHandler>, CirclesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<SheetsAndPlatesHandler>, SheetsAndPlatesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<InsulatingTubesHandler>, InsulatingTubesHandler>();
-            builder.Services.AddTransient<IAdditionalENSHandler<RivetsHandler>, RivetsHandler>();
+            //builder.Services.AddSingleton<ENSHandlerRegistry>();
 
-            builder.Services.AddSingleton(provider => 
-            {
-                var registry = new ENSHandlerRegistry();
+            builder.Services.Scan(scan => scan
+                .FromAssemblyOf<LumberHandler>()
+                .AddClasses(classes => classes.AssignableTo<IAdditionalENSHandler>())
+                .AsSelfWithInterfaces()
+                .WithTransientLifetime());
 
-                registry.RegisterHandler(
-                    ["Калиброванные круги, шестигранники, квадраты"], 
-                    str => 
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<CalsibCirclesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
 
-                registry.RegisterHandler(
-                    ["Пиломатериалы"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<LumberHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
+            builder.Services.AddSingleton(CreateENSHandlerRegistry);
 
-                registry.RegisterHandler(
-                    ["Канаты, Тросы"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<RopesAndCablesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
 
-                registry.RegisterHandler(
-                    ["Провода монтажные"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<MountingWiresHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Проволока"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<WireHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<BarsAndTiresHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<PipesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Шайбы"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<WashersHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Катанка, проволока из меди и сплавов"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<RodCopperHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Катанка, проволока"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<RodHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Шурупы"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<ScrewsHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Припои (прутки, проволока, трубки)"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<SoldersHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Гвозди, Дюбели"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<NailsHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Ленты, широкополосный прокат"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<TapesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Круги, шестигранники, квадраты"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<CirclesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Части соединительные"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<ConnectionPartsHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Листы, плиты, ленты из титана и сплавов"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<SheetsAndPlatesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Трубки изоляционные гибкие"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<InsulatingTubesHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                registry.RegisterHandler(
-                    ["Заклепки"],
-                    str =>
-                    {
-                        var handler = ActivatorUtilities.CreateInstance<RivetsHandler>(provider);
-                        return handler.AdditionalStringHandle(str);
-                    });
-
-                return registry;
-            });
-            
             builder.Services.AddSingleton<IGostHandle, GostHandler>();
             builder.Services.AddSingleton<IGostRemove, GostRemover>();
             builder.Services.AddSingleton<IStandartHandle<Standart>, StandartHandler<Standart>>();
@@ -249,6 +83,18 @@ namespace Helicopters_Russia
 
             var host = builder.Build();
             host.Run();
+        }
+
+        private static ENSHandlerRegistry CreateENSHandlerRegistry(IServiceProvider provider)
+        {
+            var registry = new ENSHandlerRegistry();
+
+            var handlers = provider.GetServices<IAdditionalENSHandler>().ToList();
+            foreach (var handler in handlers)
+            {
+                registry.RegisterHandler(handler.SupportedKeys, handler.AdditionalStringHandle);
+            }
+            return registry;
         }
     }
 }
