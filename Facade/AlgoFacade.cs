@@ -57,10 +57,11 @@ namespace Algo.Facade
 
                 //удаление ГОСТов из грязной опзиции
                 var garbageNameWithoutGosts = gostRemove.RemoveGosts(item.ShortName, itemGosts);
-                var upgradedItemGosts = gostHandle.GostsPostProcessor(itemGosts);
-                var gostWithoutLetters = gostHandle.RemoveLettersAndOtherSymbolsFromGosts(upgradedItemGosts); // удаление букв из госта (понадобится в алгоритме Cosine)
+                var upgradedItemGosts = gostHandle.GostsPostProcessor(itemGosts)
+                                                  .Select(gostHandle.RemoveLettersAndOtherSymbolsFromGost).ToHashSet();
+                //var gostWithoutLetters = RemoveLettersAndOtherSymbolsFromGost(upgradedItemGosts); // удаление букв из госта (понадобится в алгоритме Cosine)
 
-                result.Add(garbageNameWithoutGosts, item, gostWithoutLetters);
+                result.Add(garbageNameWithoutGosts, item, /*gostWithoutLetters*/upgradedItemGosts);
             }
             return result;
         }

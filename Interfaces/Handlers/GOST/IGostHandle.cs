@@ -6,6 +6,6 @@
 
         HashSet<string> GostsPostProcessor(HashSet<string> gosts);
 
-        HashSet<string> RemoveLettersAndOtherSymbolsFromGosts(HashSet<string> gosts);
+        string RemoveLettersAndOtherSymbolsFromGost(string gost);
     }
 }

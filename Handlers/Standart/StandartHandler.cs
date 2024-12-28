@@ -35,34 +35,41 @@ namespace Algo.Handlers.Standart
 
         public ConcurrentDictionary<TStandart, string> HandleStandartNames(HashSet<TStandart> standarts)
         {
-            int currentProgress = 0;
             var fixedStandarts = new ConcurrentDictionary<TStandart, string>();
-            Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
+            int currentProgress = 0;           
+            int total = standarts.Count;
+
+            Parallel.For(0, total, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, i =>
             {
+                var standartItem = standarts.ElementAt(i);
                 //удаление гостов из эталона
-                var gosts = new HashSet<string>() { standartItem.MaterialNTD, standartItem.NTD }
-                .Where(item => !string.IsNullOrEmpty(item) && item.Length > 0).ToHashSet();
-                //удаление букв и др. символов из ГОСТ
-                var handledGost = gostHandle.RemoveLettersAndOtherSymbolsFromGosts(gosts).ToArray();
+                var gosts = new[] { standartItem.MaterialNTD, standartItem.NTD }
+                    .Where(item => !string.IsNullOrEmpty(item))
+                    .Select(gostHandle.RemoveLettersAndOtherSymbolsFromGost)//удаление букв и др. символов из ГОСТ
+                    .ToArray();
+                
+                //var handledGost = gostHandle.RemoveLettersAndOtherSymbolsFromGosts(gosts).ToArray();
 
                 //так как в приоритете ГОСТы из столбцов то их обрабатываем и добавляем в обновлённый экземпляр класса Standart. Для удаления гостов из наименования эталона не используем значения из столбцов, а как и с грязными данными через Regex ищем подстроки и удаляем их.
                 var itemGosts = gostHandle.GetGOSTFromPositionName(standartItem.Name);
-                var copyItems = new HashSet<string>(itemGosts);               
-                var itemNameWithRemovedGosts = gostRemove.RemoveGosts(standartItem.Name, copyItems);
+                //var copyItems = new HashSet<string>(itemGosts);               
+                var itemNameWithRemovedGosts = gostRemove.RemoveGosts(standartItem.Name, itemGosts);
 
+                var updatedStandart = updatedEntityFactoryStandart.CreateUpdatedEntity(
+                    standartItem.Id,
+                    standartItem.Code,
+                    standartItem.Name,
+                    (gosts.Length > 1) ? gosts[1] : "",
+                    (gosts.Length > 0) ? gosts[0] : "",
+                    standartItem.ENSClassification);
 
-                fixedStandarts.TryAdd(
-                    updatedEntityFactoryStandart.CreateUpdatedEntity(
-                        standartItem.Id,
-                        standartItem.Code,
-                        standartItem.Name,
-                        (handledGost.Length > 1) ? handledGost[1] : "",
-                        (handledGost.Length > 0) ? handledGost[0] : "",
-                        standartItem.ENSClassification),
-                    eNSHandler.BaseStringHandle(itemNameWithRemovedGosts)
-                    );
-                currentProgress = Interlocked.Increment(ref currentProgress);
-                UpdateProgress(currentProgress, standarts.Count);
+                var handledName = eNSHandler.BaseStringHandle(itemNameWithRemovedGosts);
+                fixedStandarts.TryAdd(updatedStandart,handledName);
+
+                if (Interlocked.Increment(ref currentProgress) % 100 == 0)
+                {
+                    UpdateProgress(currentProgress, total);
+                }
             });
             return fixedStandarts;
         }
@@ -75,7 +82,6 @@ namespace Algo.Handlers.Standart
                         .Any(gostItem => subCategory.Key.NTD.Contains(gostItem) || subCategory.Key.MaterialNTD.Contains(gostItem))));
 
             return new ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>(filteredData);
-
         }
 
         private void UpdateProgress(int current, int total)
