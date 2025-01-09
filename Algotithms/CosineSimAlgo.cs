@@ -122,12 +122,16 @@ namespace Algo.Algotithms
                         var standartTokens = GetTokensFromName(standart.Value, standartGosts);
                         int commonElementsCountNow = standartTokens.Where(tokens.Contains).ToArray().Length;
                         if (similarity > similarityCoeff)//сравнение с предыдущим наилучшим результатом
-                        {
-                            similarityCoeff = similarity;
+                        {              
                             bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
+                            similarityCoeff = similarity;
+                            commonElementsCount = commonElementsCountNow;
                         }
                         else if (similarity == similarityCoeff && commonElementsCountNow > commonElementsCount)
+                        {
                             bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
+                            commonElementsCount = commonElementsCountNow;
+                        }                          
                         else if (similarity - similarityCoeff < 0.1)//если эталон по уровню сопоставления не очень сильно отличается от "идеального" на тот момент сопоставления, то есть вероятность того, что именно этот эталон и будет искомым
                             bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
                     }

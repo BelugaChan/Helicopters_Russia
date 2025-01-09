@@ -15,15 +15,16 @@ namespace Algo.Handlers.ENS
         {
             {" С ", " " },
             {"КА Ч ", "" },
-            {"НАЗНА ч ", "" },
+            {"НАЗНА Ч ", "" },
             {"2 АКЛ ", ""},
             { "(", "" },
             { ")", "" }
         };
         private Dictionary<string, string> regexReplacements = new Dictionary<string, string>
         {
-            {"ПР", "ПРОВОЛОКА" },
-            {"ПРВ", "ПРОВОЛОКА" }
+            {@"(\b|\s)ПР\s", "$1ПРОВОЛОКА " },
+            {@"(\b|\s)ПРВ\s", "$1ПРОВОЛОКА " },
+            {@"\b\s*Д\s*(\d+)\b"," $1 " }
         };
 
         private IReplacementsStrategy replacementsStrategy;

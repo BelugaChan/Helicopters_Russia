@@ -9,12 +9,13 @@ namespace Algo.Handlers.Garbage
         //private HashSet<string> resGosts = new HashSet<string>();
         private List<string> patterns = new List<string>() 
         {
+            @"(?<!\s)ГОСТ\s?\d{4}-\d{2}",
+            @"\b(Г|ГОСТ)\s*\d{5,6}\.\d{1,3}-\d{1,4}",
             /*@"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",*///добавить (?<![a-zA-Z])(\d+)? в начало
-            @"\b(?:\/?\s*-?\s*)?(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{1,5}(?:[-\d]{1,5})+(?:\/?\s*)?\b",
+            @"\b(?:\/?\s*-?\s*)?(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{1,5}(?:[-\d]{1,5})+(?:\/?\s*)?(?![.-])\b",
             @"\b(?:\/?\s*)?ТУ\s*[a-zA-Zа-яА-Я]*\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*(?:\/?\s*)?\b",
             @"\bСТО\s*\d{1,9}-\d{1,5}-\d{1,5}\b",
-            @"\bЕТУ\s*\d{1,5}",
-            @"(?<!\s)ГОСТ\s?\d{4}-\d{2}"
+            @"\bЕТУ\s*\d{1,5}"           
         };
         public HashSet<string> GetGOSTFromPositionName(string name)
         {
@@ -29,19 +30,12 @@ namespace Algo.Handlers.Garbage
                     foreach (Match match in matches)
                     {
                         resStr = match.Value;
-                        //resGosts.Add(match.Value.Replace("/",""));
                         if (resStr.Length > 0 && !char.IsLetter(resStr[0]))
-                        {
                             resStr = resStr.Substring(1);
-                        }
                         if (resStr.Length > 0 && !char.IsDigit(resStr[^1]))
-                        {
                             resStr = resStr.Substring(0, resStr.Length - 1);
-                        }
                         if (resStr.Length < 4)
-                        {
                             continue;
-                        }
                         res.Add(resStr);
                     }
                 }

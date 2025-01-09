@@ -23,11 +23,12 @@ namespace Algo.Handlers.ENS
 
         private Dictionary<string, string> circleRegex = new Dictionary<string, string>
         {
+            { @"\b\d{1,2}\sКЛ\b", ""},
             { @"(КР.*)(КР)", "$1"},//удаление повторений КР и ШГ
             { @"(ШГ.*)(ШГ)", "$1"},
             { @"\bКР\s*\d+","КРУГ" },
             { @"\bШГ\s*\d+","ШЕСТГРАННИК" },
-            { @"\bВ\s*Н\s*(\d+)\s*АТП?\s*Ф?\s*(\d+)\b", @"Н $1 НД $2" }
+            { @"\bВ\s*Н\s*(\d+)\s*АТП?\s*Ф?\s*(\d+)\b", "Н $1 НД $2" }
         };
 
         private IReplacementsStrategy replacementsStrategy;
