@@ -18,7 +18,7 @@ namespace Algo.Abstract
 
         protected int currentProgress = 0;
 
-        public abstract (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, Dictionary<TStandart, double>> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
+        public abstract (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
             where TStandart : IStandart
             where TGarbageData : IGarbageData;
 

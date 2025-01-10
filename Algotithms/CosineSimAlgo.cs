@@ -5,6 +5,7 @@ using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
 using Algo.Registry;
 using F23.StringSimilarity;
+using Org.BouncyCastle.Asn1.Cmp;
 using System.Collections.Concurrent;
 
 namespace Algo.Algotithms
@@ -29,14 +30,14 @@ namespace Algo.Algotithms
             this.cosine = cosine;
         }
         //основной алгоритм в данном классе
-        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, Dictionary<TStandart, double>> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
+        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
         {
             currentProgress = 0;
 
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing = new();
 
             ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag = new();
-            ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> midBag = new();
+            ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>, string)> midBag = new();
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag = new();
 
             var matchedData = algoResult.MatchedData; //грязные позиции, для которых нашлось сопоставление с группами эталонов
@@ -85,7 +86,7 @@ namespace Algo.Algotithms
         public void MainRun<TStandart, TGarbageData>
             (ConcurrentBag<MatchedResult<TStandart, TGarbageData>> matchedData,
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing,
-            ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> midBag,
+            ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>, string)> midBag,
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
             where TStandart : IStandart
             where TGarbageData : IGarbageData
@@ -102,7 +103,7 @@ namespace Algo.Algotithms
                 var garbageDataGosts = garbageItem.ProcessedGosts; //вытянутые из наименования грязной позиции ГОСТы
 
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName);//дефолтная обработка наименования грязной позиции, так же, как и для эталона
-                var tokens = GetTokensFromName(baseProcessedGarbageName, garbageDataGosts);
+                var tokens = /*GetTokensFromName(baseProcessedGarbageName, garbageDataGosts);*/GetTokensFromGosts(garbageDataGosts);
 
                 string improvedProcessedGarbageName = "";
 
@@ -119,8 +120,8 @@ namespace Algo.Algotithms
 
                         //выделение уникальных чисел для позиции эталона
                         var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
-                        var standartTokens = GetTokensFromName(standart.Value, standartGosts);
-                        int commonElementsCountNow = standartTokens.Where(tokens.Contains).ToArray().Length;
+                        var standartTokens = /*GetTokensFromName(standart.Value, standartGosts);*/GetTokensFromGosts(standartGosts);
+                        int commonElementsCountNow = standartTokens.Intersect(tokens).Count();
                         if (similarity > similarityCoeff)//сравнение с предыдущим наилучшим результатом
                         {              
                             bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
@@ -132,7 +133,7 @@ namespace Algo.Algotithms
                             bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
                             commonElementsCount = commonElementsCountNow;
                         }                          
-                        else if (similarity - similarityCoeff < 0.1)//если эталон по уровню сопоставления не очень сильно отличается от "идеального" на тот момент сопоставления, то есть вероятность того, что именно этот эталон и будет искомым
+                        else if (similarity - similarityCoeff < 0.25/*0.1*/)//если эталон по уровню сопоставления не очень сильно отличается от "идеального" на тот момент сопоставления, то есть вероятность того, что именно этот эталон и будет искомым
                             bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
                     }
                 }
@@ -141,8 +142,13 @@ namespace Algo.Algotithms
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
                 if (similarityCoeff < 0.1) //данным грязным позициям даётся второй шанс на дефолтном прогоне
                     dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName, garbageDataGosts));
-                else if (similarityCoeff < 1 || bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1).All(kvp => kvp.Value.Item2 != tokens.Count) && garbageDataGosts.Count == 1)
-                    midBag.TryAdd(garbageDataItem, DictionaryConverter(bestOfOrderedStandarts));
+                else if (similarityCoeff < 1)
+                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), string.Empty)); 
+                else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1).All(kvp => kvp.Value.Item2 != tokens.Count) && tokens/*garbageDataGosts*/.Count == 1) //для данного случая требуется наличие у всех идеально сопоставленных эталонов несовпадения по ГОСТам, при том, что коичество ГОСТов будет равно 1.         
+                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом"));
+                else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 < tokens.Count || kvp.Value.Item1 > 0.75/*0.9*/ && kvp.Value.Item2 == tokens.Count).Count() > 1
+                        && !bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 == tokens.Count).Any()) //проверка случая, когда запись эталона и грязной позиции равны, но хотя бы один из ГОСТов отличается и в bestOfOrderedStandarts существует позиция, очень похожая на грязную позицию, у которой с грязной позицие совпадают все госты (в данном случае сравниваются все числа в наименовании)
+                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом")); //для данного случая необходимо наличие как минимум двух записей. Одна идеально сопоставлена по наименованию но не идеальна по ГОСТам, а другая наоборот
                 else if (Math.Abs(similarityCoeff - 1) < epsilon)//для сопоставления с уровнем 1, берём в качестве сопоставленного эталона позицию с уронем сопоставления 1 и только её. Логика может быть изменена(брать три лучших, но при этом опустить границу с 1 до 0,95). Необходимо продумать данную логику, чтобы не изменять данный метод.
                     AddToBestBag(bestBag, garbageDataItem, DictionaryConverter(bestOfOrderedStandarts));      
                 
@@ -154,7 +160,7 @@ namespace Algo.Algotithms
             (ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing, 
             ConcurrentDictionary<TStandart, string> allProcessedStandarts,
             ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag, 
-            ConcurrentDictionary<TGarbageData,Dictionary<TStandart, double>> midBag, 
+            ConcurrentDictionary<TGarbageData,(Dictionary<TStandart, double>,string)> midBag, 
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
         {
             Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
@@ -176,7 +182,7 @@ namespace Algo.Algotithms
                 var bestOfOrderedStandarts = GetBestStandarts(bestStandart);
 
                 if ((gosts.Count == 0 || gosts.All(t => t.Length == 0)) && similarityCoeff > 0.05)//если у позиции отсутствует ГОСТ, то она переносится в коллекцию требует уточнения
-                    midBag.TryAdd(garbageDataItem, bestOfOrderedStandarts);
+                    midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, "У позиции с грязными данными отсутствует ГОСТ"));
                 else
                 {
                     var orderedStandart = bestOfOrderedStandarts.FirstOrDefault();
@@ -185,19 +191,19 @@ namespace Algo.Algotithms
                     else if (Math.Abs(similarityCoeff - 1) < epsilon)
                         AddToBestBag(bestBag, garbageDataItem, bestOfOrderedStandarts);
                     else if (similarityCoeff < 1)
-                        midBag.TryAdd(garbageDataItem, bestOfOrderedStandarts);
+                        midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, string.Empty));
                     
                 }
                 LogProgress(10, dataForPostProcessing.Count,ref currentProgress, "4. Дополнительный прогон алгоритма Cosine");
             });
         }
 
-        public List<long> GetTokensFromName(string name, HashSet<string> gosts)
+        public HashSet<long> GetTokensFromName(string name, HashSet<string> gosts)
         {
-            var tokens = name.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+            var tokens = name.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
             foreach (var handledGost in gosts)
             {
-                var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToList();
+                var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
                 foreach (var handledToken in handledGostTokens)
                 {
                     tokens.Add(handledToken);
@@ -205,7 +211,21 @@ namespace Algo.Algotithms
             }
             return tokens;
         }
-        
+
+        public HashSet<long> GetTokensFromGosts(HashSet<string> gosts)
+        {
+            var tokens = new HashSet<long>();
+            foreach (var handledGost in gosts)
+            {
+                var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
+                foreach (var handledToken in handledGostTokens)
+                {
+                    tokens.Add(handledToken);
+                }
+            }
+            return tokens;
+        }
+
         public Dictionary<TStandart, (double, double)> GetBestStandarts<TStandart>(ConcurrentDictionary<TStandart, (double, double)> bestStandart)
         {
             // Создаём копию данных для работы
@@ -215,7 +235,7 @@ namespace Algo.Algotithms
                 .Take(3)
                 .ToArray();
 
-            bool addedFirst = false; //данный флаг необходим для того, чтобы понять, был ли встречен элемент, для которого рзаница коэффициентов совпадения текущего и последующего больше 0,2
+            bool addedFirst = false; //данный флаг необходим для того, чтобы понять, был ли встречен элемент, для которого рзаница коэффициентов совпадения текущего и последующего больше 0,25
             var result = new Dictionary<TStandart, (double, double)>();
 
             for (int i = 0; i < orderedStandarts.Length; i++)
@@ -225,7 +245,7 @@ namespace Algo.Algotithms
                 if (i < orderedStandarts.Length - 1)
                 {
                     var (nextCoeff, nextCommonEls) = orderedStandarts[i + 1].Value;
-                    if (Math.Abs(Math.Round(nextCoeff, 4) - Math.Round(coeff, 4)) > 0.2)
+                    if (Math.Abs(Math.Round(nextCoeff, 4) - Math.Round(coeff, 4)) > 0.25)
                     {
                         addedFirst = true;
                         result[orderedStandarts[i].Key] = orderedStandarts[i].Value;
@@ -296,11 +316,11 @@ namespace Algo.Algotithms
             currentProgress = Interlocked.Increment(ref currentProgress);
         }
 
-        public (Dictionary<(TGarbageData, TStandart), double>, Dictionary<TGarbageData, Dictionary<TStandart, double>>, Dictionary<TGarbageData, Dictionary<TStandart, double>>) TransferData<TStandart,TGarbageData>
-            (ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag, ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> midBag, ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
+        public (Dictionary<(TGarbageData, TStandart), double>, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)>, Dictionary<TGarbageData, Dictionary<TStandart, double>>) TransferData<TStandart,TGarbageData>
+            (ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag, ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>,string)> midBag, ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
         {
             Dictionary<(TGarbageData, TStandart), double> worst = new();
-            Dictionary<TGarbageData, Dictionary<TStandart, double>> mid = new();
+            Dictionary<TGarbageData, (Dictionary<TStandart, double>,string)> mid = new();
             Dictionary<TGarbageData, Dictionary<TStandart, double>> best = new();
 
             //перенос данных из потокобезопасных коллекций в обычные
@@ -316,7 +336,8 @@ namespace Algo.Algotithms
             {
                 best.Add(item, standart);
             }
-            return (worst, mid.OrderByDescending(kvp => kvp.Value.FirstOrDefault().Value).ToDictionary(), best);
+            var sortedDict = mid.OrderByDescending(kvp => kvp.Value.Item1.Values.Max()).ToDictionary();
+            return (worst, sortedDict, best);
         }
     }
 }
