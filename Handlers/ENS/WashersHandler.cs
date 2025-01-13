@@ -13,19 +13,19 @@ namespace Algo.Handlers.ENS
 
         private Dictionary<string, string> washersReplacements = new Dictionary<string, string>
         {
-            { @"\s\d{9}$","" },
+            { @"\s\d{9}\b","" }
         };
 
-        private IReplacementsStrategy replacementsStrategy;
-        public WashersHandler(IReplacementsStrategy replacementsStrategy)
+        private IRegexReplacementStrategy regexReplacementsStrategy;
+        public WashersHandler(IRegexReplacementStrategy regexReplacementsStrategy)
         {
-            this.replacementsStrategy = replacementsStrategy;
+            this.regexReplacementsStrategy = regexReplacementsStrategy;
         }
 
         public IEnumerable<string> SupportedKeys => new[] { "Шайбы" };
         public string AdditionalStringHandle(string str)
         {
-            var res = replacementsStrategy.ReplaceItems(str, washersReplacements);
+            var res = regexReplacementsStrategy.ReplaceItemsWithRegex(str, washersReplacements,RegexOptions.None);
             return res;
 
         }

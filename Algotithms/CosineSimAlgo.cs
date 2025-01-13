@@ -191,7 +191,7 @@ namespace Algo.Algotithms
                     else if (Math.Abs(similarityCoeff - 1) < epsilon)
                         AddToBestBag(bestBag, garbageDataItem, bestOfOrderedStandarts);
                     else if (similarityCoeff < 1)
-                        midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, string.Empty));
+                        midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, "Прогон по умолчанию. Для позиции с грязными данными не найден соответствующий ГОСТ в эталонах"));
                     
                 }
                 LogProgress(10, dataForPostProcessing.Count,ref currentProgress, "4. Дополнительный прогон алгоритма Cosine");

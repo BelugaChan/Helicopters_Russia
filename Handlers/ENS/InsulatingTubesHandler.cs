@@ -10,8 +10,7 @@ namespace Algo.Handlers.ENS
         /// </summary>
         protected static Dictionary<string, string> tubesReplacements = new Dictionary<string, string>
         {
-            { "В С ","ВЫСШИЙ СОРТ " },
-            {"ТРУБКА", "ТРУБКИ" }
+            { "В С","ВЫСШИЙ СОРТ" }
         };
 
         private IReplacementsStrategy replacementsStrategy;
