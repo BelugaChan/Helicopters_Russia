@@ -16,25 +16,25 @@ namespace Algo.Handlers.ENS
         /// Трубы, трубки из алюминия и сплавов
         /// Трубы, трубки из меди и сплавов
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> { "КОНСТРУКЦ", "И", "ХОЛ", "ТЕПЛОДЕФОРМИРОВАННЫЕ", "КВАДРАТНАЯ", "ПРЯМОУГОЛЬНАЯ", "ПРОФИЛЬНАЯ","СВАРНЫЕ","ЭЛЕКТРОСВАРНЫЕ" };
+        private HashSet<string> stopWords = new HashSet<string> { "КОНСТРУКЦ", "И", "ХОЛ", "ТЕПЛОДЕФОРМИРОВАННЫЕ", "КВАДРАТНАЯ", "ПРЯМОУГОЛЬНАЯ", "ПРОФИЛЬНАЯ","СВАРНЫЕ","ЭЛЕКТРОСВАРНЫЕ","ТР" };
 
-        private Dictionary<string, string> barsReplacements = new Dictionary<string, string>
-        {
-            { "ТРУБА ТР","ТРУБА " },
-        };
+        //private Dictionary<string, string> barsReplacements = new Dictionary<string, string>
+        //{
+        //    { "ТРУБА ТР","ТРУБА " },
+        //};
 
-        private IReplacementsStrategy replacementsStrategy;
+        //private IReplacementsStrategy replacementsStrategy;
         private IStopWordsStrategy stopWordsStrategy;
-        public PipesHandler(IReplacementsStrategy replacementsStrategy, IStopWordsStrategy stopWordsStrategy)
+        public PipesHandler(/*IReplacementsStrategy replacementsStrategy,*/ IStopWordsStrategy stopWordsStrategy)
         {
-            this.replacementsStrategy = replacementsStrategy;
+            //this.replacementsStrategy = replacementsStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
         public IEnumerable<string> SupportedKeys => new[] { "Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов" };
         public string AdditionalStringHandle(string str)
         {
-            var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);
-            var final = stopWordsStrategy.RemoveWords(midRes, stopWords);
+            //var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);
+            var final = stopWordsStrategy.RemoveWords(str/*midRes*/, stopWords);
             return final;
 
         }
