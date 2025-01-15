@@ -1,7 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
-using Algo.MethodStrategy;
-using System.Text;
 
 namespace Algo.Handlers.ENS
 {

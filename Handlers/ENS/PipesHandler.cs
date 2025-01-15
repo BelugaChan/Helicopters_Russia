@@ -18,23 +18,15 @@ namespace Algo.Handlers.ENS
         /// </summary>
         private HashSet<string> stopWords = new HashSet<string> { "КОНСТРУКЦ", "И", "ХОЛ", "ТЕПЛОДЕФОРМИРОВАННЫЕ", "КВАДРАТНАЯ", "ПРЯМОУГОЛЬНАЯ", "ПРОФИЛЬНАЯ","СВАРНЫЕ","ЭЛЕКТРОСВАРНЫЕ","ТР" };
 
-        //private Dictionary<string, string> barsReplacements = new Dictionary<string, string>
-        //{
-        //    { "ТРУБА ТР","ТРУБА " },
-        //};
-
-        //private IReplacementsStrategy replacementsStrategy;
         private IStopWordsStrategy stopWordsStrategy;
-        public PipesHandler(/*IReplacementsStrategy replacementsStrategy,*/ IStopWordsStrategy stopWordsStrategy)
+        public PipesHandler(IStopWordsStrategy stopWordsStrategy)
         {
-            //this.replacementsStrategy = replacementsStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
         public IEnumerable<string> SupportedKeys => new[] { "Трубы бесшовные", "Трубы сварные", "Трубы, трубки из алюминия и сплавов", "Трубы, трубки из меди и сплавов" };
         public string AdditionalStringHandle(string str)
         {
-            //var midRes = replacementsStrategy.ReplaceItems(str, barsReplacements);
-            var final = stopWordsStrategy.RemoveWords(str/*midRes*/, stopWords);
+            var final = stopWordsStrategy.RemoveWords(str, stopWords);
             return final;
 
         }

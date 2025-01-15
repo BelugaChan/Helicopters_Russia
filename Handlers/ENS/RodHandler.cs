@@ -14,23 +14,23 @@ namespace Algo.Handlers.ENS
 
         private Dictionary<string, string> rodsReplacements = new Dictionary<string, string>
         {
-            { "ПРОВОЛОКА", "ПРВ" },
+            { @"ПРОВОЛОКА\s(\w{1,2}\s\d{1,2})", @"$1 ПРВ" },
         };
 
-        private IReplacementsStrategy replacementsStrategy;
-        public RodHandler(IReplacementsStrategy replacementsStrategy)
+        private IRegexReplacementStrategy replacementsStrategy;
+        public RodHandler(IRegexReplacementStrategy replacementsStrategy)
         {
             this.replacementsStrategy = replacementsStrategy;
         }
 
-        public IEnumerable<string> SupportedKeys => new[] { "Катанка, проволока" };
+        public IEnumerable<string> SupportedKeys => [ "Катанка, проволока" ];
         public string AdditionalStringHandle(string str)
         {
             if (Regex.IsMatch(str, pattern))
             {
                 str = "ОЛОВО " + str;
             }
-            var res = replacementsStrategy.ReplaceItems(str, rodsReplacements);
+            var res = replacementsStrategy.ReplaceItemsWithRegex(str, rodsReplacements,RegexOptions.None);
             return res;
         }
     }

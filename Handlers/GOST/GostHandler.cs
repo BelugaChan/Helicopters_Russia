@@ -10,9 +10,10 @@ namespace Algo.Handlers.Garbage
         private List<string> patterns = new List<string>() 
         {
             @"(?<!\s)ГОСТ\s?\d{4}-\d{2}",
+            @"\bГОСТ\d{1,5}-\d{2}(?=[.,]|\b)",//new feature
             @"\b(Г|ГОСТ)\s*\d{5,6}\.\d{1,3}-\d{1,4}",
             /*@"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",*///добавить (?<![a-zA-Z])(\d+)? в начало
-            @"\b(?:\/?\s*-?\s*)?(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{1,5}(?:[-\d]{1,5})+(?:\/?\s*)?(?![.-])\b",
+            @"\b(?:\/?\s*-?\s*)?(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{1,5}(?:[-\d]{1,5})+(?:\/?\s*)?(?![-.])\b",
             @"\b(?:\/?\s*)?ТУ\s*[a-zA-Zа-яА-Я]*\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*[-.]\d{1,5}[a-zA-Zа-яА-Я]*(?:\/?\s*)?\b",
             @"\bСТО\s*\d{1,9}-\d{1,5}-\d{1,5}\b",
             @"\bЕТУ\s*\d{1,5}"           
@@ -45,20 +46,33 @@ namespace Algo.Handlers.Garbage
 
         public HashSet<string> GostsPostProcessor(HashSet<string> gosts)
         {
-            return gosts.Select(item =>
+            var handled = gosts.Select(item =>
             {
                 string processedGost = Regex.Replace(item, @"Г\d+-\d+-\d+-\d+", match => match.Value.Replace("Г", "ТУ"));
                 processedGost = Regex.Replace(processedGost, @"(ТУ\s+)(\d+)\.(\d+\.\d+-\d+)", "$1$2-$3");
                 processedGost = Regex.Replace(processedGost, @"Г\s*\d", match => match.Value.Replace("Г", "ГОСТ"));
                 return processedGost.Replace(" ", "").TrimEnd('/').TrimEnd(',');
             }).ToHashSet();
+            var itemsToRemove = new HashSet<string>();
+            foreach (var str in handled) //Если в GetGOSTFromPositionName выделилась лишняя часть ГОСТа, к примеру ГОСТ1144-80 и ГОСТ1144, то ГОСТ1144 будет удалён как повторяющийся элемент
+            {
+                if (handled.Any(other => other != str && other.Contains(str)))
+                {
+                    itemsToRemove.Add(str);
+                }
+            }
+            foreach (var str in itemsToRemove)
+            {
+                handled.Remove(str);
+            }
+            return handled;
         }
 
         public string RemoveLettersAndOtherSymbolsFromGost(string gost)
         {
             if (!string.IsNullOrEmpty(gost))
             {
-                return Regex.Replace(gost, @"[\p{L}.\-/\s]", "");
+                return Regex.Replace(gost, @"[\p{L}/\s]", "");
             }
             return "";/*gosts.Select(item => Regex.Replace(item, @"[\p{L}.\-/\s]", "")).Where(cleaned => cleaned.Length > 0).ToArray();*/
         }
