@@ -17,8 +17,7 @@ namespace Algo.Handlers.ENS
             { "СТ", "КРУГ"}
         };
         private Dictionary<string, string> circleRegex = new Dictionary<string, string>
-        {
-            { @"ГР\s*\d{1,2}", ""},
+        {           
             { @"Ф\s*(\d+)", @"B 1 НД $1"}
         };
 
@@ -36,7 +35,10 @@ namespace Algo.Handlers.ENS
         public string AdditionalStringHandle(string str)
         {
             var replaced = replacementsStrategy.ReplaceItems(str, circleReplacements);
-            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
+            string specialRegexReplacement = Regex.Replace(replaced, @"ГР\s*(1|2|3)",
+                match => match.Groups[1].Value == "1" ? "I" :
+                         match.Groups[1].Value == "2" ? "II" : "III");
+            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(specialRegexReplacement, circleRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
 

@@ -4,9 +4,7 @@ using Algo.Facade;
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
 using Algo.Registry;
-using Algo.Services.Order;
 using F23.StringSimilarity;
-using Org.BouncyCastle.Asn1.Cmp;
 using System.Collections.Concurrent;
 
 namespace Algo.Algotithms
@@ -186,7 +184,7 @@ namespace Algo.Algotithms
                 var bestOfOrderedStandarts = orderService.GetBestStandarts(bestStandart);
 
                 if ((gosts.Count == 0 || gosts.All(t => t.Length == 0)) && similarityCoeff > 0.05)//если у позиции отсутствует ГОСТ, то она переносится в коллекцию требует уточнения
-                    midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, "У позиции с грязными данными отсутствует ГОСТ"));
+                    midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, "У позиции с грязными данными отсутствует ГОСТ или ГОСТ не был выявлен алгоритмом"));
                 else
                 {
                     var orderedStandart = bestOfOrderedStandarts.FirstOrDefault();
