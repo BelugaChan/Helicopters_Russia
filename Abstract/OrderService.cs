@@ -25,6 +25,8 @@ namespace Algo.Abstract
             return ProcessOrderedStandarts(orderedStandarts, (currentCoeff, nextCoeff) => Math.Abs(Math.Round(nextCoeff, 4) - Math.Round(currentCoeff, 4)) > 0.2);
         }
 
+        public abstract Dictionary<TStandart, (double, double)> GetBestStandarts<TStandart>(ConcurrentDictionary<TStandart, (double, double, double)> bestStandart);
+
         public abstract Dictionary<TStandart, (double, double)> GetBestStandarts<TStandart>(ConcurrentDictionary<TStandart, (double, double)> bestStandart);
         public virtual Dictionary<TStandart, TValue> ProcessOrderedStandarts<TStandart, TValue>(
             List<KeyValuePair<TStandart, TValue>> orderedStandarts,

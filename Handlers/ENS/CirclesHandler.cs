@@ -9,16 +9,20 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Круги, шестигранники, квадраты
         /// </summary>
-        
-        private HashSet<string> stopWords = new HashSet<string> {"АТП" };
+
+        private HashSet<string> stopWords = new HashSet<string> { "КР","МЕХОБР","Ф", "ММ", "АТП", "АКБ", "БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР" };
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
-            { "СТАЛЬ", "КРУГ" },
-            { "СТ", "КРУГ"}
+            { "СТАЛЬ", "КРУГ" }
+            //{ "СТ ", "КРУГ "}
         };
         private Dictionary<string, string> circleRegex = new Dictionary<string, string>
-        {           
-            { @"Ф\s*(\d+)", @"B 1 НД $1"}
+        {
+            { @"\s*СТ\s", @"КРУГ " },
+            { @"(\d{1,3}) НД",@"НД $1"},
+            { @"(Ф|Ø|АТП|КР)\s*(\d+)", @"НД $2"},
+            { @"Г\s(\d{1,2})", @"НД $1"},
+            { @"ГР\s*(\d+)", @"$1 ГП"}
         };
 
         private IReplacementsStrategy replacementsStrategy;
@@ -35,10 +39,10 @@ namespace Algo.Handlers.ENS
         public string AdditionalStringHandle(string str)
         {
             var replaced = replacementsStrategy.ReplaceItems(str, circleReplacements);
-            string specialRegexReplacement = Regex.Replace(replaced, @"ГР\s*(1|2|3)",
-                match => match.Groups[1].Value == "1" ? "I" :
-                         match.Groups[1].Value == "2" ? "II" : "III");
-            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(specialRegexReplacement, circleRegex, RegexOptions.None);
+            //string specialRegexReplacement = Regex.Replace(replaced, @"ГР\s*(1|2|3)",
+            //    match => match.Groups[1].Value == "1" ? "I" :
+            //             match.Groups[1].Value == "2" ? "II" : "III");
+            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
 

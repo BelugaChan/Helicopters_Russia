@@ -23,6 +23,7 @@ namespace Algo.Handlers.ENS
 
         private Dictionary<string, string> circleRegex = new Dictionary<string, string>
         {
+            { @"[Ф,Ø]\s*(\d+)", @"НД $1"},
             { @"\b\d{1,2}\sКЛ\b", ""},
             { @"(КР.*)(КР)", "$1"},//удаление повторений КР и ШГ
             { @"(ШГ.*)(ШГ)", "$1"},

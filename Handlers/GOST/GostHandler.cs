@@ -9,7 +9,7 @@ namespace Algo.Handlers.Garbage
         //private HashSet<string> resGosts = new HashSet<string>();
         private List<string> patterns = new List<string>() 
         {
-            @"(?<!\s)ГОСТ\s?\d{4}-\d{2}",
+            @"(?<!\s)ГОСТ\s?\d{4}-\d{2}\b",
             @"\bГОСТ\d{1,5}-\d{2}(?=[.,]|\b)",//new feature
             @"\b(Г|ГОСТ)\s*\d{5,6}\.\d{1,3}-\d{1,4}",
             /*@"\b(ГОСТ|Г|ОСТ\s*1|ОСТ1)\s*Р?\s*\d{3,5}(?:\.\d+)?\s*-\s*\d{2,4}(?:[\/, ]?)\b",*///добавить (?<![a-zA-Z])(\d+)? в начало
@@ -25,8 +25,8 @@ namespace Algo.Handlers.Garbage
             var resStr = "";                    
             foreach (var pattern in patterns)
             {
-                var matches = Regex.Matches(fixedName, pattern);
-                if (matches.Count > 0)
+                var matches = Regex.Matches(fixedName, pattern).OrderByDescending(m => m.Length);
+                if (matches.Count() > 0)
                 {
                     foreach (Match match in matches)
                     {

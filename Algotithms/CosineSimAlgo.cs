@@ -1,11 +1,13 @@
 ﻿using Abstractions.Interfaces;
 using Algo.Abstract;
+using Algo.Base;
 using Algo.Facade;
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
 using Algo.Registry;
 using F23.StringSimilarity;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 
 namespace Algo.Algotithms
 {
@@ -17,19 +19,21 @@ namespace Algo.Algotithms
 
         private ENSHandlerRegistry handlerRegistry;
         private OrderService orderService;
-        private Cosine cosine;
+        //private Cosine cosine;
+        private CosineSimpled cosineSimpled;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
             IProgressStrategy progressStrategy,
             ENSHandlerRegistry handlerRegistry,
             OrderService orderService,
-            Cosine cosine)
+            /*Cosine cosine*/CosineSimpled cosineSimpled)
         {            
             this.eNSHandler = eNSHandler;
             this.progressStrategy = progressStrategy;
             this.handlerRegistry = handlerRegistry;
             this.orderService = orderService;
-            this.cosine = cosine;
+            //this.cosine = cosine;
+            this.cosineSimpled = cosineSimpled;
         }
         //основной алгоритм в данном классе
         public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
@@ -95,7 +99,7 @@ namespace Algo.Algotithms
         {
             Parallel.ForEach(matchedData, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {
-                ConcurrentDictionary<TStandart, (double, double)> bestStandart = new();//необходимо для запоминания лучших сопоставленных эталонов для каждой грязной позиции. В значении первый double - уровень сопоставления. Второй - общее количество числовых элементов с эталоном. (Необходимо для дополнительной сортировки, так как существуют одинаковые наименования, но с разными ГОСТ)
+                ConcurrentDictionary<TStandart, (double, double/*,double*/)> bestStandart = new();//необходимо для запоминания лучших сопоставленных эталонов для каждой грязной позиции. В значении первый double - уровень сопоставления. Второй - общее количество числовых элементов с эталоном. (Необходимо для дополнительной сортировки, так как существуют одинаковые наименования, но с разными ГОСТ)
                 int commonElementsCount = 0;//количество общих чисел у грязной позиции и эталона
                 double similarityCoeff = -1;
 
@@ -105,7 +109,8 @@ namespace Algo.Algotithms
                 var garbageDataGosts = garbageItem.ProcessedGosts; //вытянутые из наименования грязной позиции ГОСТы
 
                 string baseProcessedGarbageName = eNSHandler.BaseStringHandle(garbageDataHandeledName);//дефолтная обработка наименования грязной позиции, так же, как и для эталона
-                var tokens = /*GetTokensFromName(baseProcessedGarbageName, garbageDataGosts);*/GetTokensFromGosts(garbageDataGosts);
+                var tokensFromGosts = /*GetTokensFromName(baseProcessedGarbageName, garbageDataGosts);*/GetTokensFromGosts(garbageDataGosts);
+                //var tokensFromName = GetTokensFromName(baseProcessedGarbageName).Count;
 
                 string improvedProcessedGarbageName = "";
 
@@ -118,25 +123,27 @@ namespace Algo.Algotithms
                     improvedProcessedGarbageName = SelectHandler(groupClassificationName, baseProcessedGarbageName);
                     foreach (var standart in standartGroups.Value) //стандарты в каждой отдельной группе
                     {
-                        var similarity = cosine.Similarity(improvedProcessedGarbageName, standart.Value);//основной алго
+                        var similarity = /*cosine*/cosineSimpled.Similarity(improvedProcessedGarbageName, standart.Value);//основной алго
 
                         //выделение уникальных чисел для позиции эталона
                         var standartGosts = new HashSet<string>() { standart.Key.MaterialNTD, standart.Key.NTD };
-                        var standartTokens = /*GetTokensFromName(standart.Value, standartGosts);*/GetTokensFromGosts(standartGosts);
-                        int commonElementsCountNow = standartTokens.Intersect(tokens).Count();
+                        var standartTokensFromGosts = /*GetTokensFromName(standart.Value, standartGosts);*/GetTokensFromGosts(standartGosts);
+                        //var standartTokensFromName = GetTokensFromName(standart.Value).Count;
+
+                        int commonElementsCountNow = standartTokensFromGosts.Intersect(tokensFromGosts).Count();
                         if (similarity > similarityCoeff)//сравнение с предыдущим наилучшим результатом
                         {              
-                            bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
+                            bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow/*, standartTokensFromName*/));
                             similarityCoeff = similarity;
                             commonElementsCount = commonElementsCountNow;
                         }
                         else if (similarity == similarityCoeff && commonElementsCountNow > commonElementsCount)
                         {
-                            bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
+                            bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow/*, standartTokensFromName*/));
                             commonElementsCount = commonElementsCountNow;
                         }                          
                         else if (similarity - similarityCoeff < 0.25/*0.1*/)//если эталон по уровню сопоставления не очень сильно отличается от "идеального" на тот момент сопоставления, то есть вероятность того, что именно этот эталон и будет искомым
-                            bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow));
+                            bestStandart.TryAdd(standart.Key, (similarity, commonElementsCountNow/*, standartTokensFromName*/));
                     }
                 }
                 var bestOfOrderedStandarts = orderService.GetBestStandarts(bestStandart);//отсортированные стандарты.Сначала по коэффициенту сопоставления, потом по количеству общих чисел из ГОСТов (у позиции с двумя общими ГОСТами приоритет будет выше, чем у позиции с одним общим ГОСТом, если коэффициент сопоставления с этими эталонами идентичен)
@@ -144,13 +151,17 @@ namespace Algo.Algotithms
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
                 if (similarityCoeff < 0.1) //данным грязным позициям даётся второй шанс на дефолтном прогоне
                     dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName, garbageDataGosts));
-                else if (similarityCoeff < 1)
+                else if (/*similarityCoeff < 1 ||*/ bestOfOrderedStandarts.FirstOrDefault().Value.Item1 < 1)
                     midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), string.Empty)); 
-                else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1).All(kvp => kvp.Value.Item2 != tokens.Count) && garbageDataGosts.Where(t => !string.IsNullOrEmpty(t)).Count() == 1) //для данного случая требуется наличие у всех идеально сопоставленных эталонов несовпадения по ГОСТам, при том, что коичество ГОСТов будет равно 1.         
-                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом"));
-                else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 < tokens.Count || kvp.Value.Item1 > 0.75/*0.9*/ && kvp.Value.Item2 == tokens.Count).Count() > 1
-                        && !bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 == tokens.Count).Any()) //проверка случая, когда запись эталона и грязной позиции равны, но хотя бы один из ГОСТов отличается и в bestOfOrderedStandarts существует позиция, очень похожая на грязную позицию, у которой с грязной позицие совпадают все госты (в данном случае сравниваются все числа в наименовании)
-                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом")); //для данного случая необходимо наличие как минимум двух записей. Одна идеально сопоставлена по наименованию но не идеальна по ГОСТам, а другая наоборот
+                else if(bestOfOrderedStandarts.FirstOrDefault().Value.Item2 < tokensFromGosts.Count)
+                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Для идеально сопоставленного наименования отсутствует полное совпадение по ГОСТам"));
+                //else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1).All(kvp => kvp.Value.Item2 != tokens.Count) && garbageDataGosts.Where(t => !string.IsNullOrEmpty(t)).Count() == 1) //для данного случая требуется наличие у всех идеально сопоставленных эталонов несовпадения по ГОСТам, при том, что коичество ГОСТов будет равно 1.         
+                //    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом"));
+                //else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 < tokens.Count || kvp.Value.Item1 > 0.75/*0.9*/ && kvp.Value.Item2 == tokens.Count).Count() > 1
+                //        && !bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 == tokens.Count).Any()) //проверка случая, когда запись эталона и грязной позиции равны, но хотя бы один из ГОСТов отличается и в bestOfOrderedStandarts существует позиция, очень похожая на грязную позицию, у которой с грязной позицие совпадают все госты (в данном случае сравниваются все числа в наименовании)
+                //    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом")); //для данного случая необходимо наличие как минимум двух записей. Одна идеально сопоставлена по наименованию но не идеальна по ГОСТам, а другая наоборот
+                //else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 < tokens.Count).Any())
+                //    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом"));
                 else if (Math.Abs(similarityCoeff - 1) < epsilon)//для сопоставления с уровнем 1, берём в качестве сопоставленного эталона позицию с уронем сопоставления 1 и только её. Логика может быть изменена(брать три лучших, но при этом опустить границу с 1 до 0,95). Необходимо продумать данную логику, чтобы не изменять данный метод.
                     AddToBestBag(bestBag, garbageDataItem, DictionaryConverter(bestOfOrderedStandarts));      
                 
@@ -172,7 +183,7 @@ namespace Algo.Algotithms
                 double similarityCoeff = -1;
                 foreach (var (standart, standartName) in allProcessedStandarts)
                 {
-                    double coeff = cosine.Similarity(garbageName, standartName);
+                    double coeff = /*cosine*/cosineSimpled.Similarity(garbageName, standartName);
                     if (coeff > similarityCoeff)
                     {
                         similarityCoeff = coeff;
@@ -200,17 +211,17 @@ namespace Algo.Algotithms
             });
         }
 
-        public HashSet<long> GetTokensFromName(string name, HashSet<string> gosts)
+        public HashSet<long> GetTokensFromName(string name)
         {
             var tokens = name.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
-            foreach (var handledGost in gosts)
-            {
-                var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
-                foreach (var handledToken in handledGostTokens)
-                {
-                    tokens.Add(handledToken);
-                }
-            }
+            //foreach (var handledGost in gosts)
+            //{
+            //    var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
+            //    foreach (var handledToken in handledGostTokens)
+            //    {
+            //        tokens.Add(handledToken);
+            //    }
+            //}
             return tokens;
         }
 
