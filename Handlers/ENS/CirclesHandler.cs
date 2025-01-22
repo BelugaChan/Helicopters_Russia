@@ -1,5 +1,7 @@
-﻿using Algo.Interfaces.Handlers.ENS;
+﻿using Algo.Interfaces.Factory;
+using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Interfaces.Strategy;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -28,11 +30,13 @@ namespace Algo.Handlers.ENS
         private IReplacementsStrategy replacementsStrategy;
         private IRegexReplacementStrategy regexReplacementStrategy;
         private IStopWordsStrategy stopWordsStrategy;
-        public CirclesHandler(IReplacementsStrategy replacementsStrategy, IRegexReplacementStrategy regexReplacementStrategy, IStopWordsStrategy stopWordsStrategy)
+        private IProcessingGostStrategyFactory strategyFactory;
+        public CirclesHandler(IReplacementsStrategy replacementsStrategy, IRegexReplacementStrategy regexReplacementStrategy, IStopWordsStrategy stopWordsStrategy, IProcessingGostStrategyFactory strategyFactory)
         {
             this.replacementsStrategy = replacementsStrategy;
             this.regexReplacementStrategy = regexReplacementStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
+            this.strategyFactory = strategyFactory;
         }
 
         public IEnumerable<string> SupportedKeys => new[] { "Круги, шестигранники, квадраты" };
@@ -46,6 +50,12 @@ namespace Algo.Handlers.ENS
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
 
+        }
+
+        public string AdditionalStringHandleWithGost(string str, string gost)
+        {
+            var strategy = strategyFactory.GetStrategy(gost);
+            return strategy.HandleWithExactGost(str);
         }
     }
 }
