@@ -1,5 +1,7 @@
 using Abstractions.Interfaces;
+using Algo.Abstract;
 using Algo.Algotithms;
+using Algo.Base;
 using Algo.Facade;
 using Algo.Factory;
 using Algo.Handlers.ENS;
@@ -7,6 +9,7 @@ using Algo.Handlers.Garbage;
 using Algo.Handlers.GOST;
 using Algo.Handlers.Standart;
 using Algo.Interfaces.Algorithms;
+using Algo.Interfaces.Factory;
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.Handlers.GOST;
 using Algo.Interfaces.Handlers.Standart;
@@ -15,6 +18,7 @@ using Algo.MethodStrategy;
 using Algo.Models;
 using Algo.ProgressStrategy;
 using Algo.Registry;
+using Algo.Services.Order;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Readers;
 using ExcelHandler.Writers;
@@ -53,10 +57,12 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<IUpdatedEntityFactoryGarbageData<GarbageData>, GarbageDataFactory>();
             builder.Services.AddSingleton<IUpdatedEntityFactoryStandart<Standart>, StandartFactory>();
             builder.Services.AddSingleton<IENSHandler, ENSHandler>();
-            builder.Services.AddSingleton(provider => new Cosine(2));
+            builder.Services.AddSingleton(provider => new CosineSimpled/*Cosine*/());
+            builder.Services.AddSingleton<OrderService,OrderByLinearConvolutionService>();
             builder.Services.AddSingleton<IReplacementsStrategy, ReplacementsStrategy>();
             builder.Services.AddSingleton<IRegexReplacementStrategy, RegexReplacementsStrategy>();
             builder.Services.AddSingleton<IStopWordsStrategy, StopWordsStrategy>();
+            builder.Services.AddSingleton<IProcessingGostStrategyFactory, ProcessingGostStrategyFactory>();
 
             //builder.Services.AddSingleton<ENSHandlerRegistry>();
 
