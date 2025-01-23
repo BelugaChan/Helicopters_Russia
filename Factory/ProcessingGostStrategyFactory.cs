@@ -1,23 +1,40 @@
 ﻿using Algo.Interfaces.Factory;
 using Algo.Interfaces.Strategy;
-using Algo.MethodStrategy;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Algo.MethodStrategy.Circles;
 
 namespace Algo.Factory
 {
     public class ProcessingGostStrategyFactory : IProcessingGostStrategyFactory
     {
+        private readonly Dictionary<Func<string, bool>, IGostStrategy> strategies = new();
+        public ProcessingGostStrategyFactory()
+        {
+            Register(gost => gost.Contains("5950"), new Gost5950Strategy());
+        }
+        //public IGostStrategy GetStrategy(string gost)
+        //{
+        //    return gost switch
+        //    {
+        //        "5950" => new Gost5950Strategy(),
+        //        _ => throw new ArgumentException($"Неизвестный ГОСТ: {gost}")
+        //    };
+        //}
         public IGostStrategy GetStrategy(string gost)
         {
-            return gost switch
+            foreach (var entry in strategies)
             {
-                "5920" => new Gost5950Strategy(),
-                _ => throw new ArgumentException($"Неизвестный ГОСТ: {gost}")
-            };
+                if (entry.Key(gost))
+                {
+                    return entry.Value;
+                }
+            }
+
+            throw new ArgumentException($"Неизвестный ГОСТ: {gost}");
+        }
+
+        private void Register(Func<string, bool> condition, IGostStrategy strategy)
+        {
+            strategies[condition] = strategy;
         }
     }
 }

@@ -1,8 +1,10 @@
-﻿namespace Algo.Interfaces.Handlers.ENS
+﻿using Algo.Models;
+
+namespace Algo.Interfaces.Handlers.ENS
 {
     public interface IAdditionalENSHandler
     {
         IEnumerable<string> SupportedKeys { get; }
-        string AdditionalStringHandle(string str);
+        string AdditionalStringHandle(ProcessingContext processingContext/*string str*/);
     }
 }

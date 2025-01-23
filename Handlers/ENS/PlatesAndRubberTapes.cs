@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using NPOI.SS.Formula.Functions;
 using System.Text.RegularExpressions;
 
@@ -27,9 +28,9 @@ namespace Algo.Handlers.ENS
         }
         public IEnumerable<string> SupportedKeys => ["Пластины, ленты резиновые"];
 
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(str, plateRegex, RegexOptions.None);
+            var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(processingContext.Input, plateRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;
         }

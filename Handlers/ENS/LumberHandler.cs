@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -20,9 +21,9 @@ namespace Algo.Handlers.ENS
             this.replacementsStrategy = replacementsStrategy;
         }
         public IEnumerable<string> SupportedKeys => new[] { "Пиломатериалы" };
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var res = replacementsStrategy.ReplaceItems(str, lumberReplacements);
+            var res = replacementsStrategy.ReplaceItems(processingContext.Input, lumberReplacements);
             return res;
 
         }

@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -43,9 +44,9 @@ namespace Algo.Handlers.ENS
         }
 
         public IEnumerable<string> SupportedKeys => new[] { "Калиброванные круги, шестигранники, квадраты" };
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var replaced = replacementsStrategy.ReplaceItems(str, circleReplacements);
+            var replaced = replacementsStrategy.ReplaceItems(processingContext.Input, circleReplacements);
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;

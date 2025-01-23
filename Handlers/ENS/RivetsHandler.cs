@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -23,9 +24,9 @@ namespace Algo.Handlers.ENS
             this.stopWordsStrategy = stopWordsStrategy;
         }
         public IEnumerable<string> SupportedKeys => new[] { "Заклепки" };
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var res = stopWordsStrategy.RemoveWords(str, stopWords);
+            var res = stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
             return res;
 
         }

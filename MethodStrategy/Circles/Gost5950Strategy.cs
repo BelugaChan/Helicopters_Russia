@@ -1,6 +1,6 @@
 ﻿using Algo.Interfaces.Strategy;
 
-namespace Algo.MethodStrategy
+namespace Algo.MethodStrategy.Circles
 {
     public class Gost5950Strategy : IGostStrategy
     {

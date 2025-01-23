@@ -1,6 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
-using System.Text;
+using Algo.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -39,9 +39,9 @@ namespace Algo.Handlers.ENS
         }
 
         public IEnumerable<string> SupportedKeys => new[] { "Проволока" };
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var replaced = replacementsStrategy.ReplaceItems(str, wireReplacements);
+            var replaced = replacementsStrategy.ReplaceItems(processingContext.Input, wireReplacements);
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, regexReplacements, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);
             return final;

@@ -1,7 +1,7 @@
 ﻿using Algo.Interfaces.Factory;
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
-using Algo.Interfaces.Strategy;
+using Algo.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -39,10 +39,22 @@ namespace Algo.Handlers.ENS
             this.strategyFactory = strategyFactory;
         }
 
-        public IEnumerable<string> SupportedKeys => new[] { "Круги, шестигранники, квадраты" };
-        public string AdditionalStringHandle(string str)
+        public IEnumerable<string> SupportedKeys => [ "Круги, шестигранники, квадраты" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var replaced = replacementsStrategy.ReplaceItems(str, circleReplacements);
+            string gostHandled = "";
+            try
+            {
+                gostHandled = AdditionalStringHandleWithGost(processingContext.Input, processingContext.Gost);
+            }
+            catch (ArgumentException ex)
+            {
+                Console.WriteLine(ex.Message);
+                gostHandled = processingContext.Input;
+            }
+            
+
+            var replaced = replacementsStrategy.ReplaceItems(gostHandled, circleReplacements);
             //string specialRegexReplacement = Regex.Replace(replaced, @"ГР\s*(1|2|3)",
             //    match => match.Groups[1].Value == "1" ? "I" :
             //             match.Groups[1].Value == "2" ? "II" : "III");

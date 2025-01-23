@@ -4,6 +4,7 @@ using Algo.Base;
 using Algo.Facade;
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using Algo.Registry;
 using F23.StringSimilarity;
 using System.Collections.Concurrent;
@@ -69,14 +70,14 @@ namespace Algo.Algotithms
         }
 
 
-        public string SelectHandler(string groupClassificationName, string baseProcessedGarbageName) //метод для выбора обработчика в соответствие с классификатором ЕНС.
+        public string SelectHandler(string groupClassificationName, ProcessingContext processingContext/*string baseProcessedGarbageName*/) //метод для выбора обработчика в соответствие с классификатором ЕНС.
         {
             var handler = handlerRegistry.GetHandler(groupClassificationName);
             if (handler is not null)
             {                
-                return handler(baseProcessedGarbageName);
+                return handler(/*baseProcessedGarbageName*/processingContext);
             }
-            return baseProcessedGarbageName;
+            return processingContext.Input;
         }
 
         public void ProcessPostProcessingData<TGarbageData>(ConcurrentBag<(TGarbageData, HashSet<string>)> unmatchedGarbageData, ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing)
@@ -120,7 +121,7 @@ namespace Algo.Algotithms
                 {
                     var groupClassificationName = standartGroups.Key;
                     //персональные обработчики для классификаторов ЕНС
-                    improvedProcessedGarbageName = SelectHandler(groupClassificationName, baseProcessedGarbageName);
+                    improvedProcessedGarbageName = SelectHandler(groupClassificationName, new ProcessingContext() {Input = baseProcessedGarbageName, Gost = garbageDataGosts.FirstOrDefault() }/*baseProcessedGarbageName*/);
                     foreach (var standart in standartGroups.Value) //стандарты в каждой отдельной группе
                     {
                         var similarity = /*cosine*/cosineSimpled.Similarity(improvedProcessedGarbageName, standart.Value);//основной алго

@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -24,13 +25,13 @@ namespace Algo.Handlers.ENS
         }
 
         public IEnumerable<string> SupportedKeys => [ "Катанка, проволока" ];
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            if (Regex.IsMatch(str, pattern))
+            if (Regex.IsMatch(processingContext.Input, pattern))
             {
-                str = "ОЛОВО " + str;
+                processingContext.Input = "ОЛОВО " + processingContext.Input;
             }
-            var res = replacementsStrategy.ReplaceItemsWithRegex(str, rodsReplacements,RegexOptions.None);
+            var res = replacementsStrategy.ReplaceItemsWithRegex(processingContext.Input, rodsReplacements,RegexOptions.None);
             return res;
         }
     }

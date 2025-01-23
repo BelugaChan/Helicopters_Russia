@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -21,9 +22,9 @@ namespace Algo.Handlers.ENS
 
         public IEnumerable<string> SupportedKeys => new[] { "Трубки изоляционные гибкие" };
 
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var res = replacementsStrategy.ReplaceItems(str, tubesReplacements);
+            var res = replacementsStrategy.ReplaceItems(processingContext.Input, tubesReplacements);
             return res;
 
         }

@@ -1,4 +1,5 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
+using Algo.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,9 +13,9 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Катанка, проволока из меди и сплавов
         /// </summary>
-        public string AdditionalStringHandle(string str) // заглушка, так как наименование "Катанка, проволока" более короткое, чем "Катанка, проволока из меди и сплавов" => "Катанка, проволока из меди и сплавов" - будет частным случаем при текущей логике регистрации обработчиков
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/) // заглушка, так как наименование "Катанка, проволока" более короткое, чем "Катанка, проволока из меди и сплавов" => "Катанка, проволока из меди и сплавов" - будет частным случаем при текущей логике регистрации обработчиков
         {
-            return str;
+            return processingContext.Input;
         }
         public IEnumerable<string> SupportedKeys => new[] { "Катанка, проволока из меди и сплавов" };
     }

@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -21,9 +22,9 @@ namespace Algo.Handlers.ENS
 
         public IEnumerable<string> SupportedKeys => new[] { "Прутки, шины из алюминия и сплавов", "Прутки, шины из меди и сплавов", "Прутки из титана и сплавов" };
 
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var res = stopWordsStrategy.RemoveWords(str, stopWords);
+            var res = stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
             return res;
 
         }

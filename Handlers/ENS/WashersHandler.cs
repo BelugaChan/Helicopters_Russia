@@ -1,5 +1,6 @@
 ﻿using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -27,9 +28,9 @@ namespace Algo.Handlers.ENS
         }
 
         public IEnumerable<string> SupportedKeys => [ "Шайбы" ];
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var res = regexReplacementsStrategy.ReplaceItemsWithRegex(str, washersReplacements,RegexOptions.None);
+            var res = regexReplacementsStrategy.ReplaceItemsWithRegex(processingContext.Input, washersReplacements,RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(res, stopWords);
             return final;
 

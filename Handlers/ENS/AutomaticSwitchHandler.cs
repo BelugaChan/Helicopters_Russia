@@ -1,6 +1,7 @@
 ﻿
 using Algo.Interfaces.Handlers.ENS;
 using Algo.Interfaces.ProgressStrategy;
+using Algo.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -19,9 +20,9 @@ namespace Algo.Handlers.ENS
         }
         public IEnumerable<string> SupportedKeys => throw new NotImplementedException();
 
-        public string AdditionalStringHandle(string str)
+        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            var replaced = regexReplacementStrategy.ReplaceItemsWithRegex(str, switchRegex, RegexOptions.None);
+            var replaced = regexReplacementStrategy.ReplaceItemsWithRegex(processingContext.Input/*str*/, switchRegex, RegexOptions.None);
             return replaced;
         }
     }
