@@ -155,14 +155,7 @@ namespace Algo.Algotithms
                 else if (/*similarityCoeff < 1 ||*/ bestOfOrderedStandarts.FirstOrDefault().Value.Item1 < 1)
                     midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), string.Empty)); 
                 else if(bestOfOrderedStandarts.FirstOrDefault().Value.Item2 < tokensFromGosts.Count)
-                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Для идеально сопоставленного наименования отсутствует полное совпадение по ГОСТам"));
-                //else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1).All(kvp => kvp.Value.Item2 != tokens.Count) && garbageDataGosts.Where(t => !string.IsNullOrEmpty(t)).Count() == 1) //для данного случая требуется наличие у всех идеально сопоставленных эталонов несовпадения по ГОСТам, при том, что коичество ГОСТов будет равно 1.         
-                //    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом"));
-                //else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 < tokens.Count || kvp.Value.Item1 > 0.75/*0.9*/ && kvp.Value.Item2 == tokens.Count).Count() > 1
-                //        && !bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 == tokens.Count).Any()) //проверка случая, когда запись эталона и грязной позиции равны, но хотя бы один из ГОСТов отличается и в bestOfOrderedStandarts существует позиция, очень похожая на грязную позицию, у которой с грязной позицие совпадают все госты (в данном случае сравниваются все числа в наименовании)
-                //    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом")); //для данного случая необходимо наличие как минимум двух записей. Одна идеально сопоставлена по наименованию но не идеальна по ГОСТам, а другая наоборот
-                //else if (bestOfOrderedStandarts.Where(kvp => kvp.Value.Item1 == 1 && kvp.Value.Item2 < tokens.Count).Any())
-                //    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Наличие идеально сопоставленной записи с некорректным ГОСТом"));
+                    midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), "Для идеально сопоставленного наименования отсутствует полное совпадение по ГОСТам"));              
                 else if (Math.Abs(similarityCoeff - 1) < epsilon)//для сопоставления с уровнем 1, берём в качестве сопоставленного эталона позицию с уронем сопоставления 1 и только её. Логика может быть изменена(брать три лучших, но при этом опустить границу с 1 до 0,95). Необходимо продумать данную логику, чтобы не изменять данный метод.
                     AddToBestBag(bestBag, garbageDataItem, DictionaryConverter(bestOfOrderedStandarts));      
                 
@@ -239,82 +232,7 @@ namespace Algo.Algotithms
             }
             return tokens;
         }
-
-        //public Dictionary<TStandart, (double, double)> GetBestStandartsFirstOrderByCoeff<TStandart>(ConcurrentDictionary<TStandart, (double, double)> bestStandart)
-        //{
-        //    // Создаём копию данных для работы
-        //    var orderedStandarts = bestStandart
-        //        .OrderByDescending(t => t.Value.Item1)
-        //        .ThenByDescending(t => t.Value.Item2)
-        //        .Take(3).ToList();
-
-        //    return ProcessOrderedStandarts(orderedStandarts, (current, next) => Math.Abs(Math.Round(next.Item1, 4) - Math.Round(current.Item1, 4)) > 0.25);
-        //    //bool addedFirst = false; //данный флаг необходим для того, чтобы понять, был ли встречен элемент, для которого рзаница коэффициентов совпадения текущего и последующего больше 0,25
-        //    //var result = new Dictionary<TStandart, (double, double)>();
-
-        //    //for (int i = 0; i < orderedStandarts.Length; i++)
-        //    //{
-        //    //    var (coeff, commonEls) = orderedStandarts[i].Value;
-
-        //    //    if (i < orderedStandarts.Length - 1)
-        //    //    {
-        //    //        var (nextCoeff, nextCommonEls) = orderedStandarts[i + 1].Value;
-        //    //        if (Math.Abs(Math.Round(nextCoeff, 4) - Math.Round(coeff, 4)) > 0.25)
-        //    //        {
-        //    //            addedFirst = true;
-        //    //            result[orderedStandarts[i].Key] = orderedStandarts[i].Value;
-        //    //            break;
-        //    //        }
-        //    //    }
-
-        //    //    if (!addedFirst)
-        //    //        result[orderedStandarts[i].Key] = orderedStandarts[i].Value;
-        //    //}
-
-        //    //return result;
-        //}
-
-
-        //public Dictionary<TStandart, double> GetBestStandartsFirstOrderByCoeff<TStandart>(Dictionary<TStandart, double> bestStandart)
-        //{
-        //    // Упорядочиваем элементы и берём топ-3
-        //    var orderedStandarts = bestStandart
-        //        .OrderByDescending(t => t.Value)
-        //        .Take(3)
-        //        .ToList(); // Преобразуем в список для эффективного индексирования
-
-        //    return ProcessOrderedStandarts(orderedStandarts,(currentCoeff, nextCoeff) => Math.Abs(Math.Round(nextCoeff, 4) - Math.Round(currentCoeff, 4)) > 0.2);
-        //}
-
-        //public Dictionary<TStandart, TValue> ProcessOrderedStandarts<TStandart,TValue>(
-        //    List<KeyValuePair<TStandart,TValue>> orderedStandarts,
-        //    Func<TValue,TValue,bool> differenceCondition)
-        //{
-        //    var result = new Dictionary<TStandart, TValue>();
-        //    bool addedFirst = false;
-
-        //    for (int i = 0; i < orderedStandarts.Count; i++)
-        //    {
-        //        var currentCoeff = orderedStandarts[i].Value;
-
-        //        // Проверяем разницу с коэффициентом следующего элемента
-        //        if (i < orderedStandarts.Count - 1)
-        //        {
-        //            var nextCoeff = orderedStandarts[i + 1].Value;
-        //            if (differenceCondition(currentCoeff,nextCoeff)/*Math.Abs(Math.Round(nextCoeff, 4) - Math.Round(currentCoeff, 4)) > 0.2*/)
-        //            {
-        //                addedFirst = true;
-        //                result[orderedStandarts[i].Key] = currentCoeff;
-        //                break;
-        //            }
-        //        }
-
-        //        if (!addedFirst)
-        //            result[orderedStandarts[i].Key] = currentCoeff;
-        //    }
-
-        //    return result;
-        //}
+       
         public Dictionary<TStandart, double> DictionaryConverter<TStandart>(Dictionary<TStandart, (double, double)> val)
         {
             return val.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Item1);

@@ -12,7 +12,7 @@ namespace Algo.Handlers.ENS
         /// Круги, шестигранники, квадраты
         /// </summary>
 
-        private HashSet<string> stopWords = new HashSet<string> { "КР","МЕХОБР","Ф", "ММ", "АТП", "АКБ", "БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР" };
+        private HashSet<string> stopWords = new HashSet<string> { "КР","МЕХОБР", "ММ", "АТП", "АКБ", "БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР" };
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
             { "СТАЛЬ", "КРУГ" }
@@ -22,9 +22,10 @@ namespace Algo.Handlers.ENS
         {
             { @"\s*СТ\s", @"КРУГ " },
             { @"(\d{1,3}) НД",@"НД $1"},
-            { @"(Ф|Ø|АТП|КР)\s*(\d+)", @"НД $2"},
-            { @"Г\s(\d{1,2})", @"НД $1"},
-            { @"ГР\s*(\d+)", @"$1 ГП"}
+            { @"(Ø|АТП|КР)\s*(\d+)", @"НД $2"},
+            { @"Ф\s*(\d+)$", @"НД $1"},
+            { @"\sГ\s(\d{1,2})", @"НД $1"},
+            { @"\sГР\s*(\d+)", @"$1 ГП"}
         };
 
         private IReplacementsStrategy replacementsStrategy;
@@ -42,16 +43,15 @@ namespace Algo.Handlers.ENS
         public IEnumerable<string> SupportedKeys => [ "Круги, шестигранники, квадраты" ];
         public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
         {
-            string gostHandled = "";
-            try
-            {
-                gostHandled = AdditionalStringHandleWithGost(processingContext.Input, processingContext.Gost);
-            }
-            catch (ArgumentException ex)
-            {
-                Console.WriteLine(ex.Message);
-                gostHandled = processingContext.Input;
-            }
+            string gostHandled = processingContext.Input;
+            //try
+            //{
+            //    gostHandled = AdditionalStringHandleWithGost(processingContext.Input, processingContext.Gost);
+            //}
+            //catch (ArgumentException ex)
+            //{
+            //    gostHandled = processingContext.Input;
+            //}
             
 
             var replaced = replacementsStrategy.ReplaceItems(gostHandled, circleReplacements);

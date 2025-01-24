@@ -11,7 +11,7 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Калиброванные круги, шестигранники, квадраты
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> {"Ф","ММ","АТП","АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
+        private HashSet<string> stopWords = new HashSet<string> {"ММ","АТП","АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
 
         private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
         {
@@ -24,7 +24,9 @@ namespace Algo.Handlers.ENS
 
         private Dictionary<string, string> circleRegex = new Dictionary<string, string>
         {
-            { @"[Ф,Ø]\s*(\d+)", @"НД $1"},
+            { @"(?:В|Б)\s(?:Т)?\s(Н\s\d{1,2})", @"$1"},
+            { @"Ø\s*(\d+)", @"НД $1"},
+            { @"Ф\s*(\d+)$", @"НД $1"},
             { @"\b\d{1,2}\sКЛ\b", ""},
             { @"(КР.*)(КР)", "$1"},//удаление повторений КР и ШГ
             { @"(ШГ.*)(ШГ)", "$1"},

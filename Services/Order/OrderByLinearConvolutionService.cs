@@ -14,11 +14,6 @@ namespace Algo.Services.Order
             var normalizedCommonEls = new ConcurrentDictionary<TStandart, (double,double)>();
             foreach (var standart in bestStandartSnapshot)
             {
-                //if (standart.Value.Item1 == 1)
-                //{
-                //    normalizedCommonEls.TryAdd(standart.Key, (1, standart.Value.Item2));
-                //    continue;
-                //}
                 double normalizedCommonEl;
                 if (maxCommonTokensAmount == minCommonTokensAmount)
                     normalizedCommonEl = 1;                
@@ -49,11 +44,6 @@ namespace Algo.Services.Order
 
             foreach (var standart in bestStandartSnapshot)
             {
-                //if (standart.Value.Item1 == 1)
-                //{
-                //    normalizedCommonEls.TryAdd(standart.Key, (1, standart.Value.Item2));
-                //    continue;
-                //}
                 double normalizedCommonElName;
                 double normalizedCommonElGost;
                 if (maxCommonTokensAmountFromGost == minCommonTokensAmountFromGost)
