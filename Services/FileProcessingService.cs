@@ -1,8 +1,7 @@
-﻿using Algo.Facade;
+﻿using AbstractionsAndModels.Facade;
+using AbstractionsAndModels.Interfaces.Algorithms;
+using AbstractionsAndModels.Models;
 using Algo.Factory;
-using Algo.Interfaces.Algorithms;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
 using ExcelHandler.Interfaces;
 
 public class FileProcessingService(

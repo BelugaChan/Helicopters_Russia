@@ -20,8 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Abstractions">
-      <HintPath>Dll\Abstractions.dll</HintPath>
+    <Reference Include="AbstractionsAndModels">
+      <HintPath>Dll\AbstractionsAndModels.dll</HintPath>
     </Reference>
     <Reference Include="Algo">
       <HintPath>Dll\Algo.dll</HintPath>

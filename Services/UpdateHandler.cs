@@ -1,5 +1,4 @@
-﻿using Algo.Interfaces.Algorithms;
-using Algo.Interfaces.ProgressStrategy;
+﻿using AbstractionsAndModels.Interfaces.ProgressStrategy;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Mergers;
 using Helicopters_Russia.Models;
