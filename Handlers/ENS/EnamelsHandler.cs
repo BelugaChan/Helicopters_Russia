@@ -1,14 +1,13 @@
-﻿
-using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
 {
     public class EnamelsHandler : IAdditionalENSHandler
     {
-        private Dictionary<string, string> enamelsRegexReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> enamelsRegexReplacements = new ()
         {
             { @"\d\sБЛЕДНО\sЖЕЛТ(?:АЯ|ЫЙ|УЮ|ЫЕ)$", "ПЕРВЫЙ СОРТ БЛЕДНО ЖЕЛТЫЙ"},
             { @"\d\sСВЕТЛО\sЖЕЛТ(?:АЯ|ЫЙ|УЮ|ЫЕ)$", "ПЕРВЫЙ СОРТ СВЕТЛО ЖЕЛТЫЙ"},
@@ -33,16 +32,11 @@ namespace Algo.Handlers.ENS
         };
 
         private IRegexReplacementStrategy regexReplacementStrategy;
-        public EnamelsHandler(IRegexReplacementStrategy regexReplacementStrategy)
-        {
-            this.regexReplacementStrategy= regexReplacementStrategy;
-        }
+        public EnamelsHandler(IRegexReplacementStrategy regexReplacementStrategy) => this.regexReplacementStrategy = regexReplacementStrategy;
+
         public IEnumerable<string> SupportedKeys => ["Эмали"];
 
-        public string AdditionalStringHandle(ProcessingContext processingContext)
-        {
-            var res = regexReplacementStrategy.ReplaceItemsWithRegex(processingContext.Input, enamelsRegexReplacements, RegexOptions.None);
-            return res;
-        }
+        public string AdditionalStringHandle(ProcessingContext processingContext) => regexReplacementStrategy.ReplaceItemsWithRegex(processingContext.Input, enamelsRegexReplacements, RegexOptions.None);
+
     }
 }

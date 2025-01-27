@@ -1,12 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -16,19 +10,12 @@ namespace Algo.Handlers.ENS
         /// Заклепки
         /// </summary>
 
-        private readonly HashSet<string> stopWords = new HashSet<string> { "С", "СЕРДЕЧ", "СЕРДЕЧНИКОМ"};
+        private readonly HashSet<string> stopWords = new () { "С", "СЕРДЕЧ", "СЕРДЕЧНИКОМ"};
 
         private IStopWordsStrategy stopWordsStrategy;
-        public RivetsHandler(IStopWordsStrategy stopWordsStrategy)
-        {
-            this.stopWordsStrategy = stopWordsStrategy;
-        }
-        public IEnumerable<string> SupportedKeys => new[] { "Заклепки" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
-        {
-            var res = stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
-            return res;
+        public RivetsHandler(IStopWordsStrategy stopWordsStrategy) => this.stopWordsStrategy = stopWordsStrategy;
 
-        }
+        public IEnumerable<string> SupportedKeys => [ "Заклепки" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext) => stopWordsStrategy.RemoveWords(processingContext.Input, stopWords); 
     }
 }

@@ -13,8 +13,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="Abstractions">
-      <HintPath>bin\Debug\net8.0\Abstractions.dll</HintPath>
+    <Reference Include="AbstractionsAndModels">
+      <HintPath>..\HeliRusLib\Dll\AbstractionsAndModels.dll</HintPath>
     </Reference>
     <Reference Include="ExcelHandler">
       <HintPath>bin\Debug\net8.0\ExcelHandler.dll</HintPath>

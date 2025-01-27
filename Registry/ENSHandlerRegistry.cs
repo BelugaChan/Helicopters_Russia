@@ -1,5 +1,4 @@
-﻿
-using Algo.Models;
+﻿using AbstractionsAndModels.Models;
 
 namespace Algo.Registry
 {

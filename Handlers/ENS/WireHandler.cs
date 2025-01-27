@@ -1,6 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -10,8 +10,8 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Проволока
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> {"ОЛОВО","ПРЕЦИЗ", "ИЗ","СПЛ", "ЭЛЕКТР", "СОПР", "ВЫСОКИМ", "СЕРЕБР", "СТ", "ПРУЖ", "УГЛЕР", "КАЧ", "ОТВЕТСТВ", "НАЗНАЧ", "ОЦИНК", "НЕРЖ", "ХОЛОДНО", "ТЯНУТАЯ"};
-        private Dictionary<string, string> wireReplacements = new Dictionary<string, string>
+        private HashSet<string> stopWords = new () {"ОЛОВО","ПРЕЦИЗ", "ИЗ","СПЛ", "ЭЛЕКТР", "СОПР", "ВЫСОКИМ", "СЕРЕБР", "СТ", "ПРУЖ", "УГЛЕР", "КАЧ", "ОТВЕТСТВ", "НАЗНАЧ", "ОЦИНК", "НЕРЖ", "ХОЛОДНО", "ТЯНУТАЯ"};
+        private Dictionary<string, string> wireReplacements = new ()
         {
             {" С ", " " },
             {"КА Ч ", "" },
@@ -20,7 +20,7 @@ namespace Algo.Handlers.ENS
             { "(", "" },
             { ")", "" }
         };
-        private Dictionary<string, string> regexReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> regexReplacements = new ()
         {
             {@"(\b|\s)ПР\s", "$1ПРОВОЛОКА " },
             {@"(\b|\s)ПРВ\s", "$1ПРОВОЛОКА " },
@@ -38,8 +38,8 @@ namespace Algo.Handlers.ENS
             this.stopWordsStrategy = stopWordsStrategy;
         }
 
-        public IEnumerable<string> SupportedKeys => new[] { "Проволока" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public IEnumerable<string> SupportedKeys => [ "Проволока" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             var replaced = replacementsStrategy.ReplaceItems(processingContext.Input, wireReplacements);
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, regexReplacements, RegexOptions.None);

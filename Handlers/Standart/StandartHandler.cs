@@ -1,9 +1,10 @@
-﻿using Abstractions.Interfaces;
-using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.Handlers.GOST;
-using Algo.Interfaces.Handlers.Standart;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Factory;
+using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.Handlers.GOST;
+using AbstractionsAndModels.Interfaces.Handlers.Standart;
+using AbstractionsAndModels.Interfaces.Models;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Collections.Concurrent;
 
 namespace Algo.Handlers.Standart
@@ -55,13 +56,15 @@ namespace Algo.Handlers.Standart
                 //var copyItems = new HashSet<string>(itemGosts);               
                 var itemNameWithRemovedGosts = gostRemove.RemoveGosts(standartItem.Name, itemGosts);
 
-                var updatedStandart = updatedEntityFactoryStandart.CreateUpdatedEntity(
+                var updatedStandart = updatedEntityFactoryStandart.CreateUpdatedEntity
+                (
                     standartItem.Id,
                     standartItem.Code,
                     standartItem.Name,
                     (gosts.Length > 1) ? gosts[1] : "",
                     (gosts.Length > 0) ? gosts[0] : "",
-                    standartItem.ENSClassification);
+                    standartItem.ENSClassification
+                );
 
                 var handledName = eNSHandler.BaseStringHandle(itemNameWithRemovedGosts);
                 fixedStandarts.TryAdd(updatedStandart,handledName);

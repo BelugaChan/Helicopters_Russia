@@ -1,5 +1,5 @@
-﻿using Algo.Interfaces.Factory;
-using Algo.Interfaces.Strategy;
+﻿using AbstractionsAndModels.Interfaces.Factory;
+using AbstractionsAndModels.Interfaces.Strategy;
 using Algo.MethodStrategy.Circles;
 
 namespace Algo.Factory
@@ -8,9 +8,8 @@ namespace Algo.Factory
     {
         private readonly Dictionary<Func<string, bool>, IGostStrategy> strategies = new();
         public ProcessingGostStrategyFactory()
-        {
-            Register(gost => gost.Contains("5950"), new Gost5950Strategy());
-        }
+            => Register(gost => gost.Contains("5950"), new Gost5950Strategy());
+
         //public IGostStrategy GetStrategy(string gost)
         //{
         //    return gost switch
@@ -28,13 +27,11 @@ namespace Algo.Factory
                     return entry.Value;
                 }
             }
-
             throw new ArgumentException($"Неизвестный ГОСТ: {gost}");
         }
 
         private void Register(Func<string, bool> condition, IGostStrategy strategy)
-        {
-            strategies[condition] = strategy;
-        }
+            => strategies[condition] = strategy;
+
     }
 }

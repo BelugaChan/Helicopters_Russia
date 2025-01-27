@@ -1,4 +1,4 @@
-﻿using Algo.Interfaces.Handlers.GOST;
+﻿using AbstractionsAndModels.Interfaces.Handlers.GOST;
 using System.Text.RegularExpressions;
 
 
@@ -7,7 +7,7 @@ namespace Algo.Handlers.Garbage
     public class GostHandler : IGostHandle
     {
         //private HashSet<string> resGosts = new HashSet<string>();
-        private List<string> patterns = new List<string>() 
+        private List<string> patterns = new ()
         {
             @"(?<!\s)ГОСТ\s?\d{4}-\d{2}\b",
             @"\bГОСТ\d{1,5}-\d{2}(?=[.,]|\b)",//new feature

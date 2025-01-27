@@ -1,7 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Text.RegularExpressions;
 
-namespace Algo.Base
+namespace Algo.Simpled
 {
 
     public class CosineSimpled

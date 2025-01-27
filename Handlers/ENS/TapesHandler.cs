@@ -1,8 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.MethodStrategy;
-using Algo.Models;
-using System.Text;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -12,20 +10,13 @@ namespace Algo.Handlers.ENS
         /// Ленты, широкополосный прокат
         /// </summary>
 
-        private readonly HashSet<string> stopWords = new HashSet<string> { "СТ", "ИЗ", "ПРУЖ" };
+        private readonly HashSet<string> stopWords = new () { "СТ", "ИЗ", "ПРУЖ" };
 
         private IStopWordsStrategy stopWordsStrategy;
-        public TapesHandler(IStopWordsStrategy stopWordsStrategy)
-        {
-            this.stopWordsStrategy = stopWordsStrategy;
-        }
+        public TapesHandler(IStopWordsStrategy stopWordsStrategy) => this.stopWordsStrategy = stopWordsStrategy;
 
-        public IEnumerable<string> SupportedKeys => new[] { "Ленты, широкополосный прокат" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
-        {
-            var res = stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
-            return res;
+        public IEnumerable<string> SupportedKeys => [ "Ленты, широкополосный прокат" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext) => stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
 
-        }
     }
 }

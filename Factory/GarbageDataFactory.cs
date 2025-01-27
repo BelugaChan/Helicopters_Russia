@@ -1,5 +1,5 @@
-﻿using Abstractions.Interfaces;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Factory;
+using AbstractionsAndModels.Models;
 using NPOI.SS.UserModel;
 
 namespace Algo.Factory
@@ -10,7 +10,7 @@ namespace Algo.Factory
         {
             return new GarbageData()
             {
-                ShortName = row.GetCell(1)?.ToString()
+                ShortName = row.GetCell(1).ToString() ?? string.Empty,
             };
         }
 

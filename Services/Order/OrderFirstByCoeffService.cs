@@ -1,5 +1,5 @@
 ﻿using System.Collections.Concurrent;
-using Algo.Abstract;
+using AbstractionsAndModels.Abstract;
 
 namespace Algo.Services.Order
 {
@@ -24,8 +24,6 @@ namespace Algo.Services.Order
         /// <returns></returns>
         /// <exception cref="NotImplementedException"></exception>
         public override Dictionary<TStandart, (double, double)> GetBestStandarts<TStandart>(ConcurrentDictionary<TStandart, (double, double, double)> bestStandart)
-        {
-            throw new NotImplementedException();
-        }
+            => throw new NotImplementedException();
     }
 }

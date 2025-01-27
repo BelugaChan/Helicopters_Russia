@@ -1,4 +1,4 @@
-﻿using Algo.Interfaces.ProgressStrategy;
+﻿using AbstractionsAndModels.Interfaces.ProgressStrategy;
 using System.Text.RegularExpressions;
 
 namespace Algo.MethodStrategy

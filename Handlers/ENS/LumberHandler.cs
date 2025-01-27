@@ -1,6 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -9,23 +9,16 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Пиломатериалы
         /// </summary>
-        protected static Dictionary<string, string> lumberReplacements = new Dictionary<string, string>
+        protected static Dictionary<string, string> lumberReplacements = new ()
         {
             { "ХВОЙН","ХВ" },
             { "ХВОЙНЫЙ","ХВ" },
         };
 
         private IReplacementsStrategy replacementsStrategy;
-        public LumberHandler(IReplacementsStrategy replacementsStrategy)
-        {
-            this.replacementsStrategy = replacementsStrategy;
-        }
-        public IEnumerable<string> SupportedKeys => new[] { "Пиломатериалы" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
-        {
-            var res = replacementsStrategy.ReplaceItems(processingContext.Input, lumberReplacements);
-            return res;
+        public LumberHandler(IReplacementsStrategy replacementsStrategy) => this.replacementsStrategy = replacementsStrategy;
 
-        }
+        public IEnumerable<string> SupportedKeys => [ "Пиломатериалы" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext) => replacementsStrategy.ReplaceItems(processingContext.Input, lumberReplacements);
     }
 }

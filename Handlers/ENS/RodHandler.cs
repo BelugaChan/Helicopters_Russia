@@ -1,6 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -13,19 +13,16 @@ namespace Algo.Handlers.ENS
 
         private string pattern = @"О.*\b\d{1,2}\b";
 
-        private Dictionary<string, string> rodsReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> rodsReplacements = new ()
         {
             { @"ПРОВОЛОКА\s(\w{1,2}\s\d{1,2})", @"$1 ПРВ" },
         };
 
         private IRegexReplacementStrategy replacementsStrategy;
-        public RodHandler(IRegexReplacementStrategy replacementsStrategy)
-        {
-            this.replacementsStrategy = replacementsStrategy;
-        }
+        public RodHandler(IRegexReplacementStrategy replacementsStrategy) => this.replacementsStrategy = replacementsStrategy;
 
         public IEnumerable<string> SupportedKeys => [ "Катанка, проволока" ];
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             if (Regex.IsMatch(processingContext.Input, pattern))
             {

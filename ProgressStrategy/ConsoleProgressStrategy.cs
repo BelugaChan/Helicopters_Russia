@@ -1,5 +1,5 @@
-﻿using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.ProgressStrategy
 {

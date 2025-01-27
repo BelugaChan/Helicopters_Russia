@@ -1,7 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
-using System.Text;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -12,9 +11,9 @@ namespace Algo.Handlers.ENS
         /// Шайбы
         /// </summary>
 
-        private readonly HashSet<string> stopWords = new HashSet<string> { "ГРОВЕРА" };
+        private readonly HashSet<string> stopWords = new () { "ГРОВЕРА" };
 
-        private Dictionary<string, string> washersReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> washersReplacements = new ()
         {
             { @"\s\d{9}\b","" }
         };
@@ -28,7 +27,7 @@ namespace Algo.Handlers.ENS
         }
 
         public IEnumerable<string> SupportedKeys => [ "Шайбы" ];
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             var res = regexReplacementsStrategy.ReplaceItemsWithRegex(processingContext.Input, washersReplacements,RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(res, stopWords);

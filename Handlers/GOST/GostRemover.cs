@@ -1,4 +1,4 @@
-﻿using Algo.Interfaces.Handlers.GOST;
+﻿using AbstractionsAndModels.Interfaces.Handlers.GOST;
 
 namespace Algo.Handlers.GOST
 {

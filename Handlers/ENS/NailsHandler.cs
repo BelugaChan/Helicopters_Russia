@@ -1,7 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
-using System.Text;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -11,19 +10,13 @@ namespace Algo.Handlers.ENS
         /// Гвозди, Дюбели
         /// </summary>
         
-        private readonly HashSet<string> stopWords = new HashSet<string> { "ПР", "СТРОИТ", "С", "ПЛОСКОЙ", "ГОЛОВ" };
+        private readonly HashSet<string> stopWords = new () { "ПР", "СТРОИТ", "С", "ПЛОСКОЙ", "ГОЛОВ" };
 
         private IStopWordsStrategy stopWordsStrategy;
-        public NailsHandler(IStopWordsStrategy stopWordsStrategy)
-        {
-            this.stopWordsStrategy = stopWordsStrategy;
-        }
-        public IEnumerable<string> SupportedKeys => new[] { "Гвозди, Дюбели" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
-        {
-            var res = stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
-            return res;
+        public NailsHandler(IStopWordsStrategy stopWordsStrategy) => this.stopWordsStrategy = stopWordsStrategy;
 
-        }
+        public IEnumerable<string> SupportedKeys => [ "Гвозди, Дюбели" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext) => stopWordsStrategy.RemoveWords(processingContext.Input, stopWords);
+
     }
 }

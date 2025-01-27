@@ -1,6 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.Handlers.ENS
 {   
@@ -9,23 +9,16 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Провода монтажные
         /// </summary>
-        private Dictionary<string, string> wiresReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> wiresReplacements = new ()
         {
             { "КАБЕЛЬ","ПРОВОД" }
         };
 
         private IReplacementsStrategy replacementsStrategy;
 
-        public MountingWiresHandler(IReplacementsStrategy replacementsStrategy)
-        {
-            this.replacementsStrategy = replacementsStrategy;
-        }
-        public IEnumerable<string> SupportedKeys => new[] { "Провода монтажные" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
-        {
-            var res = replacementsStrategy.ReplaceItems(processingContext.Input, wiresReplacements);
-            return res;
+        public MountingWiresHandler(IReplacementsStrategy replacementsStrategy) => this.replacementsStrategy = replacementsStrategy;
 
-        }
+        public IEnumerable<string> SupportedKeys => [ "Провода монтажные" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext) => replacementsStrategy.ReplaceItems(processingContext.Input, wiresReplacements);
     }
 }

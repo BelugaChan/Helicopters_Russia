@@ -1,5 +1,5 @@
-﻿using Abstractions.Interfaces;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Factory;
+using AbstractionsAndModels.Models;
 using NPOI.SS.UserModel;
 
 namespace Algo.Factory
@@ -11,11 +11,11 @@ namespace Algo.Factory
             return new Standart
             {
                 Id = Guid.NewGuid(),
-                Code = row.GetCell(0)?.ToString(),
-                Name = row.GetCell(1)?.ToString(),
-                NTD = row.GetCell(2)?.ToString() ?? "",
-                MaterialNTD = row.GetCell(3)?.ToString() ?? "",
-                ENSClassification = row.GetCell(4)?.ToString()
+                Code = row.GetCell(0).ToString() ?? string.Empty,
+                Name = row.GetCell(1).ToString() ?? string.Empty,
+                NTD = row.GetCell(2).ToString() ?? string.Empty,
+                MaterialNTD = row.GetCell(3).ToString() ?? string.Empty,
+                ENSClassification = row.GetCell(4).ToString() ?? string.Empty
             };
         }
 

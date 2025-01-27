@@ -1,7 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
-using System.Text;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 
 namespace Algo.Handlers.ENS
 {
@@ -11,8 +10,8 @@ namespace Algo.Handlers.ENS
         /// Части соединительные
         /// </summary>
 
-        private HashSet<string> stopWords = new HashSet<string> { "Д","D" };
-        private Dictionary<string, string> connectionReplacements = new Dictionary<string, string>
+        private HashSet<string> stopWords = new () { "Д","D" };
+        private Dictionary<string, string> connectionReplacements = new ()
         {
             { "КОНТРАГАЙКА ", "КОНТРГАЙКА "},
         };
@@ -24,8 +23,8 @@ namespace Algo.Handlers.ENS
             this.replacementsStrategy = replacementsStrategy;
             this.stopWordsStrategy = stopWordsStrategy;
         }
-        public IEnumerable<string> SupportedKeys => new[] { "Части соединительные" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public IEnumerable<string> SupportedKeys => ["Части соединительные" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             var midRes = replacementsStrategy.ReplaceItems(processingContext.Input, connectionReplacements);
             var final = stopWordsStrategy.RemoveWords(midRes, stopWords);

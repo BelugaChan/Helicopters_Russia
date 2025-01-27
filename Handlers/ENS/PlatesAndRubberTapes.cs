@@ -1,7 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
-using NPOI.SS.Formula.Functions;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -12,8 +11,8 @@ namespace Algo.Handlers.ENS
         /// Пластины, ленты резиновые
         /// </summary>
 
-        private HashSet<string> stopWords = new HashSet<string> { "РЕЗИН" };
-        private Dictionary<string, string> plateRegex = new Dictionary<string, string>
+        private HashSet<string> stopWords = new () { "РЕЗИН" };
+        private Dictionary<string, string> plateRegex = new ()
         {
             {@"Н\s1", @"H I" },
             { @"([МЛ])\s*(\d+)?\s*Л\s*(\d+)", "$1 $2 $3"}
@@ -28,7 +27,7 @@ namespace Algo.Handlers.ENS
         }
         public IEnumerable<string> SupportedKeys => ["Пластины, ленты резиновые"];
 
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(processingContext.Input, plateRegex, RegexOptions.None);
             var final = stopWordsStrategy.RemoveWords(regexReplaced, stopWords);

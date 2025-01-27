@@ -1,7 +1,7 @@
-﻿using Algo.Interfaces.Factory;
-using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Interfaces.Factory;
+using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -12,13 +12,13 @@ namespace Algo.Handlers.ENS
         /// Круги, шестигранники, квадраты
         /// </summary>
 
-        private HashSet<string> stopWords = new HashSet<string> { "КР","МЕХОБР", "ММ", "АТП", "АКБ", "БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР" };
-        private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
+        private HashSet<string> stopWords = new () { "КР","МЕХОБР", "ММ", "АТП", "АКБ", "БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР" };
+        private Dictionary<string, string> circleReplacements = new ()
         {
             { "СТАЛЬ", "КРУГ" }
             //{ "СТ ", "КРУГ "}
         };
-        private Dictionary<string, string> circleRegex = new Dictionary<string, string>
+        private Dictionary<string, string> circleRegex = new ()
         {
             { @"\s*СТ\s", @"КРУГ " },
             { @"(\d{1,3}) НД",@"НД $1"},
@@ -41,7 +41,7 @@ namespace Algo.Handlers.ENS
         }
 
         public IEnumerable<string> SupportedKeys => [ "Круги, шестигранники, квадраты" ];
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             string gostHandled = processingContext.Input;
             //try

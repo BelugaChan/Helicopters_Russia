@@ -1,7 +1,6 @@
-﻿using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
-using System.Text;
+﻿using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using System.Text.RegularExpressions;
 
 namespace Algo.Handlers.ENS
@@ -11,9 +10,9 @@ namespace Algo.Handlers.ENS
         /// <summary>
         /// Калиброванные круги, шестигранники, квадраты
         /// </summary>
-        private HashSet<string> stopWords = new HashSet<string> {"ММ","АТП","АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
+        private HashSet<string> stopWords = new () {"ММ","АТП","АКБ","БЕЗНИКЕЛ", "СОДЕРЖ", "КЛ", "КАЛИБР", "ЛЕГИР", "ОБРАВ", "СТ", "НА", "ТОЧН", "МЕХОБР", "КАЧ", "УГЛЕР", "СОРТ", "НЕРЖ", "НСРЖ", "КОНСТР", "КОНСТРУКЦ", "ОЦИНК", "НИК", "ЛЕГИР", "ИНСТР"};
 
-        private Dictionary<string, string> circleReplacements = new Dictionary<string, string>
+        private Dictionary<string, string> circleReplacements = new ()
         {
             { "ПРУТОК", "КРУГ"},
             { " КР ", " КРУГ "},
@@ -22,7 +21,7 @@ namespace Algo.Handlers.ENS
             { "КРУГ В I", "КРУГ В 1 I"}
         };
 
-        private Dictionary<string, string> circleRegex = new Dictionary<string, string>
+        private Dictionary<string, string> circleRegex = new ()
         {
             { @"(?:В|Б)\s(?:Т)?\s(Н\s\d{1,2})", @"$1"},
             { @"Ø\s*(\d+)", @"НД $1"},
@@ -45,8 +44,8 @@ namespace Algo.Handlers.ENS
             this.stopWordsStrategy = stopWordsStrategy;
         }
 
-        public IEnumerable<string> SupportedKeys => new[] { "Калиброванные круги, шестигранники, квадраты" };
-        public string AdditionalStringHandle(ProcessingContext processingContext/*string str*/)
+        public IEnumerable<string> SupportedKeys => [ "Калиброванные круги, шестигранники, квадраты" ];
+        public string AdditionalStringHandle(ProcessingContext processingContext)
         {
             var replaced = replacementsStrategy.ReplaceItems(processingContext.Input, circleReplacements);
             var regexReplaced = regexReplacementStrategy.ReplaceItemsWithRegex(replaced, circleRegex, RegexOptions.None);

@@ -1,11 +1,11 @@
-﻿using Abstractions.Interfaces;
-using Algo.Abstract;
-using Algo.Base;
-using Algo.Facade;
-using Algo.Interfaces.Handlers.ENS;
-using Algo.Interfaces.ProgressStrategy;
-using Algo.Models;
+﻿using AbstractionsAndModels.Abstract;
+using AbstractionsAndModels.Facade;
+using AbstractionsAndModels.Interfaces.Handlers.ENS;
+using AbstractionsAndModels.Interfaces.Models;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
+using AbstractionsAndModels.Models;
 using Algo.Registry;
+using Algo.Simpled;
 using F23.StringSimilarity;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -64,7 +64,7 @@ namespace Algo.Algotithms
             
             var (worst, mid, best) = TransferData(worstBag, midBag, bestBag);
 
-            progressStrategy.UpdateProgress(new Models.Progress { Step = "Алгоритм завершил свою работу. Ожидайте записи результатов обработки в файл", CurrentProgress = 100 });
+            progressStrategy.UpdateProgress(new AbstractionsAndModels.Models.Progress { Step = "Алгоритм завершил свою работу. Ожидайте записи результатов обработки в файл", CurrentProgress = 100 });
             
             return (worst,mid,best);
         }
@@ -205,19 +205,20 @@ namespace Algo.Algotithms
             });
         }
 
-        public HashSet<long> GetTokensFromName(string name)
-        {
-            var tokens = name.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
-            //foreach (var handledGost in gosts)
-            //{
-            //    var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
-            //    foreach (var handledToken in handledGostTokens)
-            //    {
-            //        tokens.Add(handledToken);
-            //    }
-            //}
-            return tokens;
-        }
+        public HashSet<long> GetTokensFromName(string name) 
+            => name.Split().Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
+        //{
+        //    var tokens = 
+        //    //foreach (var handledGost in gosts)
+        //    //{
+        //    //    var handledGostTokens = handledGost.Split([' ', '-']).Where(s => long.TryParse(s, out _)).Select(long.Parse).ToHashSet();
+        //    //    foreach (var handledToken in handledGostTokens)
+        //    //    {
+        //    //        tokens.Add(handledToken);
+        //    //    }
+        //    //}
+        //    return tokens;
+        //}
 
         public HashSet<long> GetTokensFromGosts(HashSet<string> gosts)
         {
@@ -234,9 +235,7 @@ namespace Algo.Algotithms
         }
        
         public Dictionary<TStandart, double> DictionaryConverter<TStandart>(Dictionary<TStandart, (double, double)> val)
-        {
-            return val.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Item1);
-        }
+            => val.ToDictionary(kvp => kvp.Key, kvp => kvp.Value.Item1);
 
         public void AddToBestBag<TStandart, TGarbageData>(ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag, TGarbageData garbageDataItem, Dictionary<TStandart, double> bestOfOrderedStandarts)
         {
@@ -248,7 +247,7 @@ namespace Algo.Algotithms
         {
             if (currentProgress % freq == 0)
             {
-                progressStrategy.UpdateProgress(new Models.Progress { Step = step, CurrentProgress = Math.Round((double)currentProgress / counter * 100, 2) });
+                progressStrategy.UpdateProgress(new Progress { Step = step, CurrentProgress = Math.Round((double)currentProgress / counter * 100, 2) });
                 progressStrategy.LogProgress();
             }
             currentProgress = Interlocked.Increment(ref currentProgress);
