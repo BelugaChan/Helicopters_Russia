@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Options;
+using Serilog;
 using Telegram.Bot;
 
 namespace Helicopters_Russia.Services
@@ -18,7 +19,6 @@ namespace Helicopters_Russia.Services
         {
             var me = await botClient.GetMe(cancellationToken);
             Console.WriteLine($"Bot started with username: {me.Username}, time: {DateTimeOffset.Now}");
-
             botClient.StartReceiving(
                 _updateHandler,
                 cancellationToken: cancellationToken

@@ -23,6 +23,8 @@ using ExcelHandler.Readers;
 using ExcelHandler.Writers;
 using F23.StringSimilarity;
 using Helicopters_Russia.Services;
+using Serilog;
+using Serilog.Formatting.Compact;
 using Telegram.Bot;
 
 namespace Helicopters_Russia
@@ -32,7 +34,21 @@ namespace Helicopters_Russia
         public static void Main(string[] args)
         {
             var builder = Host.CreateApplicationBuilder(args);
-            builder.Logging.AddConsole();
+
+            builder.Logging.ClearProviders();
+
+            Log.Logger = new LoggerConfiguration()
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .WriteTo.Http("http://localhost:5044",
+                                queueLimitBytes: null,
+                                textFormatter: new CompactJsonFormatter())
+                .CreateLogger();
+
+
+            builder.Services.AddSerilog();
+
             // Подключаем конфигурацию
             var configuration = builder.Configuration;
             builder.Services.Configure<BotConfiguration>(configuration.GetSection("BotConfiguration"));
@@ -62,8 +78,6 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<IRegexReplacementStrategy, RegexReplacementsStrategy>();
             builder.Services.AddSingleton<IStopWordsStrategy, StopWordsStrategy>();
             builder.Services.AddSingleton<IProcessingGostStrategyFactory, ProcessingGostStrategyFactory>();
-
-            //builder.Services.AddSingleton<ENSHandlerRegistry>();
 
             builder.Services.Scan(scan => scan
                 .FromAssemblyOf<LumberHandler>()
