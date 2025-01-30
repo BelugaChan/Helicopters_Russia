@@ -21,9 +21,10 @@ using Algo.Simpled;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Readers;
 using ExcelHandler.Writers;
+using F23.StringSimilarity;
 using Helicopters_Russia.Services;
 using Serilog;
-using Serilog.Sinks.Grafana.Loki;
+using Serilog.Formatting.Compact;
 using Telegram.Bot;
 
 namespace Helicopters_Russia
@@ -34,13 +35,15 @@ namespace Helicopters_Russia
         {
             var builder = Host.CreateApplicationBuilder(args);
 
-            builder.Configuration.AddJsonFile("appsettings.json",optional:false,reloadOnChange:true);
-
             builder.Logging.ClearProviders();
 
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration)
-                .Enrich.FromLogContext() 
+                .Enrich.FromLogContext()
+                .WriteTo.Console()
+                .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .WriteTo.Http("http://localhost:5044",
+                                queueLimitBytes: null,
+                                textFormatter: new CompactJsonFormatter())
                 .CreateLogger();
 
 
@@ -54,8 +57,7 @@ namespace Helicopters_Russia
             var botConfig = configuration.GetSection("BotConfiguration").Get<BotConfiguration>();
             if (string.IsNullOrEmpty(botConfig?.BotToken))
             {
-                Log.Error("Bot token is not configured in 'appsettings.json'.");
-                throw new InvalidOperationException();               
+                throw new InvalidOperationException("Bot token is not configured in 'appsettings.json'.");
             }
             builder.Services.AddSingleton<ITelegramBotClient>(new TelegramBotClient(botConfig.BotToken));
 

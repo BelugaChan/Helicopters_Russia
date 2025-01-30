@@ -18,8 +18,7 @@ namespace Helicopters_Russia.Services
         public async Task StartAsync(CancellationToken cancellationToken)
         {
             var me = await botClient.GetMe(cancellationToken);
-            Log.Information($"Bot started with username: {me.Username}", DateTimeOffset.Now);
-            //Console.WriteLine($"Bot started with username: {me.Username}, time: {DateTimeOffset.Now}");
+            Console.WriteLine($"Bot started with username: {me.Username}, time: {DateTimeOffset.Now}");
             botClient.StartReceiving(
                 _updateHandler,
                 cancellationToken: cancellationToken

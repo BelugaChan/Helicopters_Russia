@@ -3,13 +3,12 @@ using AbstractionsAndModels.Interfaces.Algorithms;
 using AbstractionsAndModels.Models;
 using Algo.Factory;
 using ExcelHandler.Interfaces;
-using Serilog;
 
 public class FileProcessingService(
     ISimilarityCalculator similarityCalculator, 
     IExcelReader excelReader, 
     IExcelWriter excelWriter, 
-    //ILogger<FileProcessingService> logger,
+    ILogger<FileProcessingService> logger,
     AlgoFacade<Standart, GarbageData> algoFacade)
 {
     private string? _dirtyFilePath;
@@ -21,10 +20,7 @@ public class FileProcessingService(
     public async Task<string> ProcessFilesAsync(CancellationToken cancellationToken)
     {
         if (_dirtyFilePath == null || _cleanFilePath == null)
-        {
-            Log.Error("Both files are required for processing.", DateTimeOffset.Now);
-            throw new InvalidOperationException(/*"Both files are required for processing."*/);
-        }            
+            throw new InvalidOperationException("Both files are required for processing.");
         // Обработка файлов алгоритмом Cosine
         var resultFilePath = await RunProcessingAlgorithm(_dirtyFilePath, _cleanFilePath);
         return resultFilePath;
@@ -49,20 +45,19 @@ public class FileProcessingService(
 
             Pullenti.Sdk.InitializeAll();
             var algoresult = algoFacade.AlgoWrap(standarts, garbageData);
-            //Console.WriteLine($"matched: {algoresult.MatchedData.Count}");
-            //Console.WriteLine($"unmatched: {algoresult.UnmatchedGarbageData.Count}");
+            Console.WriteLine($"matched: {algoresult.MatchedData.Count}");
+            Console.WriteLine($"unmatched: {algoresult.UnmatchedGarbageData.Count}");
             // Вычисляем коэффициенты схожести и разделяем на категории
             var (worst, mid, best) = await Task.Run(() => //выделение отдельного потока для функций CalculateCoefficent. Основной поток может выполнять другие действия, пока не завершится выполнение алгоритма
                 similarityCalculator.CalculateCoefficent(algoresult));
-            //Console.WriteLine($"mid: {mid.Count}");
-            //Console.WriteLine($"best: {best.Count}");
+            Console.WriteLine($"mid: {mid.Count}");
+            Console.WriteLine($"best: {best.Count}");
             //Записываем результаты в Excel
             await excelWriter.WriteCollectionsToExcelAsync(worst, mid, best, resultFilePath);
         }
         catch (Exception ex)
         {
-            Log.Error($"На этапе обработки запроса возникла ошибка: {ex.Message}", DateTimeOffset.Now);
-            //logger.Log(LogLevel.Error, $"На этапе обработки запроса возникла ошибка: {ex.Message}, Время - {DateTimeOffset.Now}");
+            logger.Log(LogLevel.Error, $"На этапе обработки запроса возникла ошибка: {ex.Message}, Время - {DateTimeOffset.Now}");
         }
         return resultFilePath;
     }

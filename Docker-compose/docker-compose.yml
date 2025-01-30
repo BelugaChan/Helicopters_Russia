@@ -1,73 +1,32 @@
 services:
   bot:
-    container_name: heli
     build:
       context: ..
       dockerfile: Dockerfile
-    image: heli_rus
-    environment:
-      loki: http://195.133.73.65:3100
-    networks:
-      - loki
-    depends_on:
-      loki:
-        condition: service_healthy
-  loki:
-    image: grafana/loki:latest
-    container_name: loki
+  elasticsearch:
+      image: elasticsearch:8.14.3
+      container_name: elasticsearch
+      environment: 
+        - discovery.type=single-node
+        - xpack.security.enabled=false
+      ports:
+        - "9200:9200"
+  logstash:
+    image: logstash:8.14.3
+    container_name: logstash
+    volumes: 
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     ports:
-      - "3100:3100"
-    command: 
-      - "-config.file=/etc/loki/config.yml"
-      - "--server.http_addr=0.0.0.0"
-      - "--server.http_port=3000"
-    healthcheck:
-      test: wget -q --tries=1 -O- http://localhost:3100/ready
-      interval: 3s
-      timeout: 3s
-      retries: 10
-      start_period: 10s
-    volumes:
-      - ../configs/loki-config.yml:/etc/loki/config.yml
-    networks:
-      - loki
-    restart: unless-stopped
-  
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
+      - "5044:5044"
+    depends_on: 
+      - elasticsearch
+  kibana:
+    image: kibana:8.14.3
+    container_name: kibana
     environment:
-      - GF_SECURITY_ADMIN_USER=admin
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-    volumes:
-      - ../grafana_data:/var/lib/grafana
-    depends_on:
-      loki:
-        condition: service_healthy
-    networks:
-      - loki
-    restart: unless-stopped
-    command:
-      - "--server.http_addr=0.0.0.0"
-      - "--server.http_port=3000"
-        
+    - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+    - "5601:5601"
+    depends_on: 
+    - elasticsearch
 
-  # promtail:
-  #   image: grafana/promatail:latest
-  #   container_name: promtail
-  #   volumes: 
-  #     - ../Configs/promatail-config.yml
-  #     - /var/log:/var/log
-  #   command: -config.file=/etc/promtail/config.yml
-  #   depends_on:
-  #     - loki
-  #   restart: unless-stopped
-networks:
-  loki:
-    name: loki
-    driver: bridge
-
-volumes:
-  grafana_data:
