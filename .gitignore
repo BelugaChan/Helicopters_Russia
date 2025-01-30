@@ -374,3 +374,4 @@ Docker-compose/
 
 #configs
 Configs/
+/Configs/promtail-config.yml
