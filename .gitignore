@@ -371,3 +371,6 @@ grafana_data/
 
 #docker compose
 Docker-compose/
+
+#configs
+Configs/
