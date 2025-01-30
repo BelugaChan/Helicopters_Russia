@@ -365,3 +365,12 @@ appsettings.json
 
 # Logs
 logs/
+
+# configs
+configs/
+
+#Docker-compose
+Docker-compose/
+
+#grafana_data
+grafana_data/
