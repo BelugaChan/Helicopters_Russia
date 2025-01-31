@@ -3,30 +3,51 @@ services:
     build:
       context: ..
       dockerfile: Dockerfile
-  elasticsearch:
-      image: elasticsearch:8.14.3
-      container_name: elasticsearch
-      environment: 
-        - discovery.type=single-node
-        - xpack.security.enabled=false
-      ports:
-        - "9200:9200"
-  logstash:
-    image: logstash:8.14.3
-    container_name: logstash
-    volumes: 
-      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    networks:
+      - loki
+  loki:
+    image: grafana/loki:latest
+    container_name: loki
     ports:
-      - "5044:5044"
-    depends_on: 
-      - elasticsearch
-  kibana:
-    image: kibana:8.14.3
-    container_name: kibana
+      - "3100:3100"
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ../configs/loki-config.yml:/etc/loki/config.yml
+    networks:
+      - loki
+    restart: unless-stopped
+  
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
     environment:
-    - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
-    ports:
-    - "5601:5601"
-    depends_on: 
-    - elasticsearch
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ../grafana_data:/var/lib/grafana
+    depends_on:
+      - loki
+    networks:
+      - loki
+    restart: unless-stopped
+        
 
+  # promtail:
+  #   image: grafana/promatail:latest
+  #   container_name: promtail
+  #   volumes: 
+  #     - ../Configs/promatail-config.yml
+  #     - /var/log:/var/log
+  #   command: -config.file=/etc/promtail/config.yml
+  #   depends_on:
+  #     - loki
+  #   restart: unless-stopped
+networks:
+  loki:
+    name: loki
+    driver: bridge
+
+volumes:
+  grafana_data:

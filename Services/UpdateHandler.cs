@@ -2,6 +2,7 @@
 using ExcelHandler.Interfaces;
 using ExcelHandler.Mergers;
 using Helicopters_Russia.Models;
+using Serilog;
 using System.Collections.Concurrent;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -12,8 +13,8 @@ using Telegram.Bot.Types.ReplyMarkups;
 namespace Helicopters_Russia.Services
 {
     public class UpdateHandler
-        (ITelegramBotClient botClient, 
-        ILogger<UpdateHandler> logger, 
+        (ITelegramBotClient botClient,
+        //ILogger<UpdateHandler> logger, 
         FileProcessingService fileProcessingService,
         IProgressStrategy progressStrategy) : IUpdateHandler
     {
@@ -25,7 +26,8 @@ namespace Helicopters_Russia.Services
 
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken) // Обработка ошибок
         {
-            logger.LogInformation($"HandleError: {exception}, time: {DateTimeOffset.Now}");
+            Log.Information($"HandleError: {exception}.\n", DateTimeOffset.Now);
+            //logger.LogInformation($"HandleError: {exception}, time: {DateTimeOffset.Now}");
             return Task.CompletedTask;
         }
 
@@ -47,13 +49,15 @@ namespace Helicopters_Russia.Services
                         {
                             System.IO.File.Delete(file); // Удаляем файл
                         }
-                        logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted, time: {DateTimeOffset.Now}.");
+                        Log.Information("\nIn the \"Download Data\" folder, there were unused files, and they have been deleted.\n", DateTimeOffset.Now);
+                        //logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted, time: {DateTimeOffset.Now}.");
                     }
                 }
                 else if (!Directory.Exists(downloadDataPath/*"Download Data"*/)) //Если папка не существует, создаем ее
                 {
-                        Directory.CreateDirectory(downloadDataPath);
-                        logger.LogInformation($"The folder \"Download Data\" was created, time: {DateTimeOffset.Now}.");
+                    Directory.CreateDirectory(downloadDataPath);
+                    Log.Information("The folder \"Download Data\" was created.\n", DateTimeOffset.Now);
+                    //logger.LogInformation($"The folder \"Download Data\" was created, time: {DateTimeOffset.Now}.");
                 }
 
                 if (Directory.Exists(dataPath/*"Data"*/))
@@ -68,13 +72,15 @@ namespace Helicopters_Russia.Services
                         {
                             System.IO.File.Delete(file); // Удаляем файл
                         }
-                        logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted, time: {DateTimeOffset.Now}.");
+                        Log.Information("\nIn the \"Download Data\" folder, there were unused files, and they have been deleted.\n", DateTimeOffset.Now);
+                        //logger.LogInformation($"\nIn the \"Download Data\" folder, there were unused files, and they have been deleted, time: {DateTimeOffset.Now}.");
                     }
                 }
                 else if (!Directory.Exists(dataPath/*"Data"*/)) //Если папка не существует, создаем ее
                 {
                     Directory.CreateDirectory(dataPath/*"Data"*/);
-                    logger.LogInformation($"The folder \"Data\" was created, time: {DateTimeOffset.Now}.");
+                    Log.Information("The folder \"Data\" was created.\n", DateTimeOffset.Now);
+                    //logger.LogInformation($"The folder \"Data\" was created, time: {DateTimeOffset.Now}.");
                 }
             }
 
@@ -93,7 +99,8 @@ namespace Helicopters_Russia.Services
 
         private async Task OnMessage(Message msg, Update update, CancellationToken cancellationToken) // Обработка текстовых сообщений 
         {
-            logger.LogInformation($"Receive message \n\t\ttype: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            Log.Information($"Receive message \n\t\ttype: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"Receive message \n\t\ttype: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
             if (update.Message.Text is { } messageText)
                 await (messageText.Split(' ')[0] switch
                 {
@@ -108,12 +115,13 @@ namespace Helicopters_Russia.Services
 
         async Task<Message> UnknownCommand(Message msg, Update update) //Обработка неизвестной команды 
         {
-            logger.LogInformation($"Receive unknown command\n\t\tcommand: \"{msg.Text}\", type: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            Log.Warning($"Receive unknown command\n\t\tcommand: \"{msg.Text}\", type: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"Receive unknown command\n\t\tcommand: \"{msg.Text}\", type: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
 
             const string usage = """
                 Вы ввели неизвестную команду
              """;
-            
+
             await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
 
             return await Usage(msg);
@@ -121,7 +129,8 @@ namespace Helicopters_Russia.Services
 
         async Task<Message> InvalidUserState(Message msg, Update update) // Обработка ошибки состояния пользователя
         {
-            logger.LogInformation($"Data received from user prior to command invocation\n\t\tData: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            Log.Information($"Data received from user prior to command invocation\n\t\tData: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"Data received from user prior to command invocation\n\t\tData: \"{update.Message!.Type}\" with id: \"{msg.MessageId}\" from: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
 
             const string usage = """
                 Для обработки данных сначала нужно вызвать команду
@@ -144,7 +153,8 @@ namespace Helicopters_Russia.Services
         private async Task GetStatus(Update update)
         {
             var chatId = update.Message!.Chat.Id;
-            logger.LogInformation($"The \"GetStatus\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            Log.Information($"The \"GetStatus\" method was called from the user: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"The \"GetStatus\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
             var progress = progressStrategy.GetCurrentProgress();
             await botClient.SendMessage(
                 chatId,
@@ -156,7 +166,8 @@ namespace Helicopters_Russia.Services
         private async Task StartProccessing(Update update) //Начало обработки пользователя 
         {
             var chatId = update.Message!.Chat.Id;
-            logger.LogInformation($"The \"StartProccessingFiles\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            Log.Information($"The \"StartProccessingFiles\" method was called from the user: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"The \"StartProccessingFiles\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
 
             if (!_userStates.TryGetValue(chatId, out var userState) || userState == UserState.Idle)
             {
@@ -192,12 +203,12 @@ namespace Helicopters_Russia.Services
             var chatId = update.Message!.Chat.Id; // Получаем Id чата
 
             // Проверяем состояние пользователя
-            if (!_userStates.TryGetValue(chatId, out var userState)) 
+            if (!_userStates.TryGetValue(chatId, out var userState))
             {
                 await InvalidUserState(update.Message, update);
                 return;
             }
-                
+
 
             var document = update.Message.Document; // Получаем документ
             var fileId = document!.FileId; // Получаем его Id
@@ -208,11 +219,13 @@ namespace Helicopters_Russia.Services
 
             var file = await botClient.GetFile(document.FileId, cancellationToken); // Загружаем документ
 
-            logger.LogInformation($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+            Log.Information($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
 
             if (userState == UserState.WaitingForDirtyData)
             {
-                logger.LogInformation($"Added file of \"Dirty\" data from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+                Log.Information($"Added file of \"Dirty\" data from the user: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Added file of \"Dirty\" data from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
 
                 // Сохраняем путь к файлу (не fileId) в список "грязных" файлов
                 if (!_userDirtyFiles.ContainsKey(chatId))
@@ -249,7 +262,8 @@ namespace Helicopters_Russia.Services
 
             else if (userState == UserState.WaitingForCleanData)
             {
-                logger.LogInformation($"Added file of \"Clean\" data from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
+                Log.Information($"Added file of \"Clean\" data from the user: \"{update.Message.From}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Added file of \"Clean\" data from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
 
                 // Сохраняем путь к файлу (не fileId) в список "чистых" файлов
                 if (!_userCleanFiles.ContainsKey(chatId))
@@ -290,18 +304,18 @@ namespace Helicopters_Russia.Services
             var chatId = callbackQuery.Message!.Chat.Id;
 
             // Проверяем состояние пользователя
-            if (!_userStates.TryGetValue(chatId, out var userState)) 
+            if (!_userStates.TryGetValue(chatId, out var userState))
             {
                 return;
             }
 
             // Удаление Чистых файлов 
-            if (callbackQuery.Data == "incorrect_clear_data_sent") 
+            if (callbackQuery.Data == "incorrect_clear_data_sent")
             {
                 var cleanFilePaths = _userCleanFiles[chatId]; // Получаем пути всех чистых файлов
 
                 // Удаляем файлы
-                foreach (var file in cleanFilePaths) 
+                foreach (var file in cleanFilePaths)
                 {
                     try
                     {
@@ -312,13 +326,15 @@ namespace Helicopters_Russia.Services
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Error deleting uploaded clean files: {ex.Message}, time: {DateTimeOffset.Now}\n");
+                        Log.Error($"Error deleting uploaded clean files: {ex.Message}\n", DateTimeOffset.Now);
+                        //logger.LogError($"Error deleting uploaded clean files: {ex.Message}, time: {DateTimeOffset.Now}\n");
                     }
                 }
 
                 _userCleanFiles[chatId].Clear(); // Удаляем сохранения файлов для пользователя
 
-                logger.LogInformation($"Deleted \"Clean\" data for the user: \"{callbackQuery.From}\", time: {DateTimeOffset.Now}");
+                Log.Information($"Deleted \"Clean\" data for the user: \"{callbackQuery.From}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Deleted \"Clean\" data for the user: \"{callbackQuery.From}\", time: {DateTimeOffset.Now}");
 
                 await botClient.SendMessage(
                     chatId,
@@ -328,12 +344,12 @@ namespace Helicopters_Russia.Services
             }
 
             // Удаление Грязных данных
-            else if (callbackQuery.Data == "incorrect_dirty_data_sent") 
+            else if (callbackQuery.Data == "incorrect_dirty_data_sent")
             {
                 var dirtyFilePaths = _userDirtyFiles[chatId]; // Получаем пути всех чистых файлов
 
                 // Удаляем файлы
-                foreach (var file in dirtyFilePaths) 
+                foreach (var file in dirtyFilePaths)
                 {
                     try
                     {
@@ -344,7 +360,8 @@ namespace Helicopters_Russia.Services
                     }
                     catch (Exception ex)
                     {
-                        logger.LogError($"Error deleting uploaded dirty files: {ex.Message}, time: {DateTimeOffset.Now}");
+                        Log.Error($"Error deleting uploaded dirty files: {ex.Message}\n", DateTimeOffset.Now);
+                        //logger.LogError($"Error deleting uploaded dirty files: {ex.Message}, time: {DateTimeOffset.Now}");
 
                         //await botClient.SendTextMessageAsync(
                         //    chatId,
@@ -356,7 +373,8 @@ namespace Helicopters_Russia.Services
 
                 _userDirtyFiles[chatId].Clear(); // Удаляем сохранения файлов для пользователя
 
-                logger.LogInformation($"Deleted \"Dirty\" data for the user: \"{callbackQuery.From}\", time: {DateTimeOffset.Now}");
+                Log.Information($"Deleted \"Dirty\" data for the user: \"{callbackQuery.From}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Deleted \"Dirty\" data for the user: \"{callbackQuery.From}\", time: {DateTimeOffset.Now}");
 
                 await botClient.SendMessage(
                     chatId,
@@ -366,7 +384,7 @@ namespace Helicopters_Russia.Services
             }
 
             // Все грязные данные получены
-            else if (callbackQuery.Data == "dirty_files_done" && _userStates[chatId] == UserState.WaitingForDirtyData) 
+            else if (callbackQuery.Data == "dirty_files_done" && _userStates[chatId] == UserState.WaitingForDirtyData)
             {
                 _userStates[chatId] = UserState.WaitingForCleanData; // Переходим к ожиданию "чистых" данных
 
@@ -376,7 +394,7 @@ namespace Helicopters_Russia.Services
                 var dirtyResultFileName = "Грязные данные.xlsx";  // Имя объединенного файла
 
                 // Проверяем, существует ли файл, и если да, то удаляем его
-                if (System.IO.File.Exists(Path.Combine(dirtyOutputPath, dirtyResultFileName)))  
+                if (System.IO.File.Exists(Path.Combine(dirtyOutputPath, dirtyResultFileName)))
                 {
                     System.IO.File.Delete(Path.Combine(dirtyOutputPath, dirtyResultFileName));
                 }
@@ -387,7 +405,7 @@ namespace Helicopters_Russia.Services
             }
 
             // Все Чистые данные получены
-            else if (callbackQuery.Data == "clean_files_done" && _userStates[chatId] == UserState.WaitingForCleanData) 
+            else if (callbackQuery.Data == "clean_files_done" && _userStates[chatId] == UserState.WaitingForCleanData)
             {
                 _userStates[chatId] = UserState.Idle; // Заканчиваем прием файлов и переходим к обработке
 
@@ -405,7 +423,7 @@ namespace Helicopters_Russia.Services
                 await MergeFilesAsync(cleanFilePaths, cleanOutputPath, cleanResultFileName, cancellationToken); // Объединение и сохранение
 
                 await botClient.SendMessage(chatId, "Файлы получены. Начинаю обработку данных.", cancellationToken: default);
-                
+
                 _ = Task.Run(async () =>
                 {
                     await StartProccessingFiles(callbackQuery, cancellationToken); // Запуск алгоритма
@@ -422,13 +440,14 @@ namespace Helicopters_Russia.Services
 
             // Проверяем состояние пользователя
             if (_userStates[chatId] != UserState.Idle)
-                return ;
+                return;
 
-            logger.LogInformation($" Starting to process files for the user: \"{callbackQuery.From}\", time: {DateTimeOffset.Now}");
+            Log.Information($"Starting to process files for the user: \"{callbackQuery.From}\".\n", DateTimeOffset.Now);
+            //logger.LogInformation($"Starting to process files for the user: \"{callbackQuery.From}\", time: {DateTimeOffset.Now}");
 
             // Запускаем алгоритм
             try
-            {                
+            {
                 // Указываем пути к объединенным файлам
                 var dirtyFilePath = Path.Combine(/*"Data"*/dataPath, "Грязные данные.xlsx");
                 var cleanFilePath = Path.Combine(/*"Data"*/dataPath, "Чистые данные.xlsx");
@@ -447,7 +466,8 @@ namespace Helicopters_Russia.Services
                 // Запуск обработки файлов
                 var resultFilePath = await fileProcessingService.ProcessFilesAsync(cancellationToken);
 
-                logger.LogInformation($"Files have been processed, sending the result to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
+                Log.Information($"Files have been processed, sending the result to the user \"{callbackQuery.From}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Files have been processed, sending the result to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
 
                 // Проверка размера файла и выбор способа отправки
                 var fileInfo = new FileInfo(resultFilePath);
@@ -472,13 +492,15 @@ namespace Helicopters_Russia.Services
                 // Удаляем временные файл после обработки
                 System.IO.File.Delete(dirtyFilePath);
                 System.IO.File.Delete(cleanFilePath);
-                System.IO.File.Delete(resultFilePath); 
+                System.IO.File.Delete(resultFilePath);
 
-                logger.LogInformation($"Result file has been sent to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
+                Log.Information($"Result file has been sent to the user \"{callbackQuery.From}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Result file has been sent to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error while processing files: {ex.Message}, time: {DateTimeOffset.Now}\n");
+                Log.Error($"Error while processing files: {ex.Message}.\n", DateTimeOffset.Now);
+                //logger.LogError($"Error while processing files: {ex.Message}, time: {DateTimeOffset.Now}\n");
                 await botClient.SendMessage(
                     chatId,
                     "Произошла ошибка при обработке файлов. Пожалуйста, попробуйте снова.",
@@ -535,21 +557,24 @@ namespace Helicopters_Russia.Services
 
                 await excelMerger.MergeExcelFilesAsync(fileList, outputFilePath, resultFileName); // Выполняем объединение файлов
 
-                logger.LogInformation($"Files have been successfully merged and saved to: \"{Path.Combine(outputFilePath, resultFileName)}\", time: {DateTimeOffset.Now}\n");
+                Log.Information($"Files have been successfully merged and saved to: \"{Path.Combine(outputFilePath, resultFileName)}\".\n", DateTimeOffset.Now);
+                //logger.LogInformation($"Files have been successfully merged and saved to: \"{Path.Combine(outputFilePath, resultFileName)}\", time: {DateTimeOffset.Now}\n");
 
                 // Удаляем временные файлы после обработки
-                foreach ( var filePath in fileList )
-                    System.IO.File.Delete(filePath); 
+                foreach (var filePath in fileList)
+                    System.IO.File.Delete(filePath);
             }
             catch (Exception ex)
             {
-                logger.LogError($"Error while merging files: {ex.Message}, time: {DateTimeOffset.Now}\n");
+                Log.Error($"Error while merging files: {ex.Message}.\n", DateTimeOffset.Now);
+                //logger.LogError($"Error while merging files: {ex.Message}, time: {DateTimeOffset.Now}\n");
             }
         }
 
         private Task UnknownUpdateHandlerAsync(Update update)
         {
-            logger.LogInformation($"Unknown update type: {update.Type}, time: {DateTimeOffset.Now}");
+            Log.Information($"Unknown update type: {update.Type}.\n", DateTimeOffset.Now);
+            //logger.LogInformation($"Unknown update type: {update.Type}, time: {DateTimeOffset.Now}");
             return Task.CompletedTask;
         }
     }
