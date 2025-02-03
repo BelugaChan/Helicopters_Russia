@@ -23,6 +23,8 @@ using ExcelHandler.Readers;
 using ExcelHandler.Writers;
 using Helicopters_Russia.Services;
 using Serilog;
+using Serilog.Formatting.Compact;
+using Serilog.Sinks.Grafana.Loki;
 using Telegram.Bot;
 
 namespace Helicopters_Russia
@@ -38,7 +40,17 @@ namespace Helicopters_Russia
             builder.Logging.ClearProviders();
 
             Log.Logger = new LoggerConfiguration()
-                .ReadFrom.Configuration(builder.Configuration)
+                .WriteTo.Console()
+                .WriteTo.GrafanaLoki("http://loki:3100",
+                                    labels: new List<LokiLabel>
+                                    {
+                                        new LokiLabel()
+                                        {
+                                            Key="test", Value="testin"
+                                        }
+                                    },
+                                    textFormatter: new LokiJsonTextFormatter())
+                //.ReadFrom.Configuration(builder.Configuration)
                 .Enrich.FromLogContext()
                 .CreateLogger();
 

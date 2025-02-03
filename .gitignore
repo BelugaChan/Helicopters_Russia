@@ -375,7 +375,6 @@ Docker-compose/
 
 #configs
 Configs/
-/Configs/promtail-config.yml
 =======
 logs/
 >>>>>>> parent of 7166ca5 (New log stuff)

@@ -22,7 +22,7 @@ public class FileProcessingService(
     {
         if (_dirtyFilePath == null || _cleanFilePath == null)
         {
-            Log.Error("Both files are required for processing.", DateTimeOffset.Now);
+            Log.Error("Both files are required for processing.");
             throw new InvalidOperationException(/*"Both files are required for processing."*/);
         }
         // Обработка файлов алгоритмом Cosine
@@ -61,7 +61,7 @@ public class FileProcessingService(
         }
         catch (Exception ex)
         {
-            Log.Error($"На этапе обработки запроса возникла ошибка: {ex.Message}", DateTimeOffset.Now);
+            Log.Error($"На этапе обработки запроса возникла ошибка: {ex.Message}");
             //logger.Log(LogLevel.Error, $"На этапе обработки запроса возникла ошибка: {ex.Message}, Время - {DateTimeOffset.Now}");
         }
         return resultFilePath;
