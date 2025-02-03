@@ -14,13 +14,15 @@ using Algo.Handlers.Garbage;
 using Algo.Handlers.GOST;
 using Algo.Handlers.Standart;
 using Algo.MethodStrategy;
-using Algo.ProgressStrategy;
+using Algo.ProgrStrategy;
 using Algo.Registry;
 using Algo.Services.Order;
 using Algo.Simpled;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Readers;
 using ExcelHandler.Writers;
+using Helicopters_Russia.Enrichers;
+using Helicopters_Russia.Formatters;
 using Helicopters_Russia.Services;
 using Serilog;
 using Serilog.Formatting.Compact;
@@ -46,12 +48,12 @@ namespace Helicopters_Russia
                                     {
                                         new LokiLabel()
                                         {
-                                            Key="test", Value="testin"
+                                            Key="tgBotHeliRus", Value="Monitored Service Version 1"
                                         }
                                     },
-                                    textFormatter: new LokiJsonTextFormatter())
+                                    textFormatter: new CustomLokiJsonFormatter())
                 //.ReadFrom.Configuration(builder.Configuration)
-                .Enrich.FromLogContext()
+                .Enrich.With(new RemovePropertiesEnricher())
                 .CreateLogger();
 
 
@@ -77,7 +79,7 @@ namespace Helicopters_Russia
 
             builder.Services.AddSingleton<IExcelReader, NPOIReader>();
             builder.Services.AddSingleton<IExcelWriter, NPOIWriter>();
-            builder.Services.AddSingleton<IProgressStrategy, ConsoleProgressStrategy>();
+            builder.Services.AddSingleton<ProgressStrategy, SerilogProgressStrategy>();
             builder.Services.AddSingleton<IUpdatedEntityFactoryGarbageData<GarbageData>, GarbageDataFactory>();
             builder.Services.AddSingleton<IUpdatedEntityFactoryStandart<Standart>, StandartFactory>();
             builder.Services.AddSingleton<IENSHandler, ENSHandler>();

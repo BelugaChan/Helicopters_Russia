@@ -1,8 +1,10 @@
-﻿using AbstractionsAndModels.Interfaces.ProgressStrategy;
+﻿using AbstractionsAndModels.Abstract;
+using AbstractionsAndModels.Interfaces.ProgressStrategy;
 using ExcelHandler.Interfaces;
 using ExcelHandler.Mergers;
 using Helicopters_Russia.Models;
 using Serilog;
+using Serilog.Context;
 using System.Collections.Concurrent;
 using Telegram.Bot;
 using Telegram.Bot.Polling;
@@ -16,7 +18,7 @@ namespace Helicopters_Russia.Services
         (ITelegramBotClient botClient,
         //ILogger<UpdateHandler> logger, 
         FileProcessingService fileProcessingService,
-        IProgressStrategy progressStrategy) : IUpdateHandler
+        ProgressStrategy progressStrategy) : IUpdateHandler
     {
         private readonly string downloadDataPath = "Download Data";
         private readonly string dataPath = "Data";
@@ -464,13 +466,17 @@ namespace Helicopters_Russia.Services
                 fileProcessingService.SaveCleanFilePath(cleanFilePath);
 
                 // Запуск обработки файлов
-                var resultFilePath = await fileProcessingService.ProcessFilesAsync(cancellationToken);
-
+                var resultFilePath = string.Empty;
+                using (LogContext.PushProperty("SenderInfo", callbackQuery.From))
+                {
+                    resultFilePath = await fileProcessingService.ProcessFilesAsync(cancellationToken);
+                }
+                
                 Log.Information($"Files have been processed, sending the result to the user \"{callbackQuery.From}\".");
                 //logger.LogInformation($"Files have been processed, sending the result to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
 
                 // Проверка размера файла и выбор способа отправки
-                var fileInfo = new FileInfo(resultFilePath);
+                var fileInfo = !string.IsNullOrEmpty(resultFilePath) ? new FileInfo(resultFilePath) : throw new ArgumentException($"{resultFilePath} не должен быть пустым. Метод ProcessFilesAsync отработал некорректно.");
                 if (fileInfo.Length > 49 * 1024 * 1024)
                 {
                     // Если файл слишком большой, разбить и отправить по частям
