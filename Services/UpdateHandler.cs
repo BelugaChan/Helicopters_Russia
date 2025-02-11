@@ -10,6 +10,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Helicopters_Russia.Services
 {
@@ -22,7 +23,9 @@ namespace Helicopters_Russia.Services
         private readonly string downloadDataPath = "Download Data";
         private readonly string dataPath = "Data";
         private Dictionary<long, List<string>> _userDirtyFiles = new(); // Список Грязных файлов для каждого пользователя
+        private Dictionary<long, List<string>> _userDirtyNameFiles = new(); // Список названий Грязных файлов для каждого пользователя для исключения повторений
         private Dictionary<long, List<string>> _userCleanFiles = new(); // Список Чистых файлов для каждого пользователя
+        private Dictionary<long, List<string>> _userCleanNameFiles = new(); // Список названий Грязных файлов для каждого пользователя для исключения повторений
         private static readonly ConcurrentDictionary<long, Models.UserState> _userStates = new(); //Состояние пользователей
 
         public Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, HandleErrorSource source, CancellationToken cancellationToken) // Обработка ошибок
@@ -141,6 +144,55 @@ namespace Helicopters_Russia.Services
             return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
         }
 
+        async Task<Message> FileWithTheSameName(Message msg, Update update) // Обработка ошибки отправки того же файла
+        {
+            Log.Information($"The user has sent a file that they have sent before\n\t\tData: \"{update.Message!.Type}\" file name: \"{msg.MessageId}\" from: \"{update.Message.From}\".");
+
+            const string usage = """
+                Был получен файл с тем же названием как у уже полученного.
+                Пожалуйста, поменяйте название файла и отправьте еще раз.
+             """;
+
+            return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        }
+
+        async Task<Message> FileIsTooBig(Message msg, Update update, Exception ex) // Обработка ошибки отправки того же файла
+        {
+            Log.Information($"The user tried to upload a file that was too large. User: \"{update.Message.From}\" Error:\n \"{ex}\".");
+
+            const string usage = """
+                На момент написания бота Telegram позволяет боту скачивать файл размером до 20 МБ.
+                Пожалуйста, разделите ваш файл на два и, если потребуется, более и отправьте поочередно.
+                Примечание - из первого отправленного файла первая строка будет удалена, в последующих файлах она остается. После отправки файла дождитесь ответной реакции, а после отправляйте следующие.
+             """;
+
+            return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        }
+
+        async Task<Message> UnknownErrorWhenDownloadingFile(Message msg, Update update, Exception ex) // Обработка ошибки отправки того же файла
+        {
+            Log.Information($"An unhandled error was encountered while downloading the file. User: \"{update.Message.From}\" Error:\n \"{ex}\".");
+
+            const string usage = """
+                Возникла неизвестная ошибка.
+                Пожалуйста, проверьте размер файла, попробуйте поменять название и отправьте повторно. Обязательно свяжитесь с разработчиками для устранения подобного в будущем.
+             """;
+
+            return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        }
+
+        async Task<Message> NotAnExcelFileSent(Message msg, Update update) // Обработка ошибки отправки того же файла
+        {
+            Log.Information($"The user did not send an Excel file. User: \"{update.Message.From}\" File type: \"{update.Message.Document.MimeType}\".");
+
+            const string usage = """
+                Вы отправили файл, который не является файлом Excel.
+                Пожалуйста, проверьте правильный ли файл Вы отправляете. Если не выходит, измените расширение файла на .xlsx, отправьте и сообщите разработчикам.
+             """;
+
+            return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+        }
+
         async Task<Message> Usage(Message msg) //Вывод команд 
         {
             const string usage = """
@@ -174,7 +226,9 @@ namespace Helicopters_Russia.Services
             {
                 _userStates[chatId] = UserState.WaitingForDirtyData;
                 _userCleanFiles[chatId] = new List<string>();
+                _userCleanNameFiles[chatId] = new List<string>();
                 _userDirtyFiles[chatId] = new List<string>();
+                _userDirtyNameFiles[chatId] = new List<string>();
 
                 await botClient.SendMessage(
                     chatId,
@@ -214,11 +268,65 @@ namespace Helicopters_Russia.Services
             var document = update.Message.Document; // Получаем документ
             var fileId = document!.FileId; // Получаем его Id
             var fileExtension = Path.GetExtension(document.FileName); // Получаем расширение файла
-            var fileName = document.FileId; // использует имя файла - id этого файла   
-            //var fileName = document.FileName ?? fileId; // используем имя файла, если оно есть, иначе - его id
-            var filePath = Path.Combine(/*"Download data"*/downloadDataPath, fileName + fileExtension);
+            var fileName = document.FileName; // Получаем имя файла
+            
+            if (document.MimeType != "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            {
+                await NotAnExcelFileSent(update.Message, update);
+                return;
+            }
 
-            var file = await botClient.GetFile(document.FileId, cancellationToken); // Загружаем документ
+            if (userState == UserState.WaitingForDirtyData)
+            {
+                foreach (var filename in _userDirtyNameFiles[chatId])
+                {
+                    if (filename == fileName)
+                    {
+                        await FileWithTheSameName(update.Message, update);
+                        return;
+                    }
+                }
+                // Сохраняем имя файла (не fileId) в список файлов
+                if (!_userDirtyNameFiles.ContainsKey(chatId))
+                    _userDirtyNameFiles[chatId] = new List<string>();
+
+                _userDirtyNameFiles[chatId].Add(fileName);
+            }
+
+            if (userState == UserState.WaitingForCleanData)
+            {
+                foreach (var filename in _userCleanNameFiles[chatId])
+                {
+                    if (filename == fileName)
+                    {
+                        await FileWithTheSameName(update.Message, update);
+                        return;
+                    }
+                }
+                // Сохраняем имя файла (не fileId) в список файлов
+                if (!_userCleanNameFiles.ContainsKey(chatId))
+                    _userCleanNameFiles[chatId] = new List<string>();
+
+                _userCleanNameFiles[chatId].Add(fileName);
+            }
+
+            //var fileName = document.FileName ?? fileId; // используем имя файла, если оно есть, иначе - его id
+            var filePath = Path.Combine(/*"Download data"*/downloadDataPath, fileId + fileExtension);
+
+            Telegram.Bot.Types.File file = null;
+
+            try
+            {
+                file = await botClient.GetFile(document.FileId, cancellationToken); // Загружаем документ
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("Bad Request: file is too big"))
+                    await FileIsTooBig(update.Message, update, ex);
+                else
+                    await UnknownErrorWhenDownloadingFile(update.Message, update, ex);
+                return;
+            }
 
             Log.Information($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\".");
             //logger.LogInformation($"The \"HandleDocumentUpload\" method was called from the user: \"{update.Message.From}\", time: {DateTimeOffset.Now}\n");
@@ -232,12 +340,13 @@ namespace Helicopters_Russia.Services
                 if (!_userDirtyFiles.ContainsKey(chatId))
                     _userDirtyFiles[chatId] = new List<string>();
 
+
                 _userDirtyFiles[chatId].Add(filePath);
 
                 // Сохраняем файл временно
                 await using (var fileStream = new FileStream(filePath, FileMode.Create))
                 {
-                    await botClient.DownloadFile(file.FilePath!, fileStream, cancellationToken);
+                    await botClient.DownloadFile(file!.FilePath!, fileStream, cancellationToken);
                 }
 
                 // Inline кнопки
