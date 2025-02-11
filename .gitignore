@@ -373,8 +373,18 @@ grafana_data/
 #docker compose
 Docker-compose/
 
+#Certificates
+certs/
+certbot_www/
+#Postgres stuff
+env/
+sql/
+db-data/
 #configs
 Configs/
+
+#postgres-data
+postgres-data/
 =======
 logs/
 >>>>>>> parent of 7166ca5 (New log stuff)

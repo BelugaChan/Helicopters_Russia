@@ -24,8 +24,8 @@ using ExcelHandler.Writers;
 using Helicopters_Russia.Enrichers;
 using Helicopters_Russia.Formatters;
 using Helicopters_Russia.Services;
+using Microsoft.AspNetCore.Builder;
 using Serilog;
-using Serilog.Formatting.Compact;
 using Serilog.Sinks.Grafana.Loki;
 using Telegram.Bot;
 
@@ -35,7 +35,7 @@ namespace Helicopters_Russia
     {
         public static void Main(string[] args)
         {
-            var builder = Host.CreateApplicationBuilder(args);
+            var builder = /*WebApplication.CreateBuilder(args);*/Host.CreateApplicationBuilder(args);
 
             builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
 
@@ -95,10 +95,10 @@ namespace Helicopters_Russia
                 .AddClasses(classes => classes.AssignableTo<IAdditionalENSHandler>())
                 .AsSelfWithInterfaces()
                 .WithTransientLifetime());
-
+            
 
             builder.Services.AddSingleton(CreateENSHandlerRegistry);
-
+            
 
             builder.Services.AddSingleton<IGostHandle, GostHandler>();
             builder.Services.AddSingleton<IGostRemove, GostRemover>();
@@ -111,7 +111,17 @@ namespace Helicopters_Russia
 
             //builder.Services.AddSingleton<FileProcessingService>();
 
-            var host = builder.Build();
+            var host/*app*/ = builder.Build();
+
+            //app.MapPost("/bot", async (HttpContext context, ITelegramBotClient botClient, UpdateHandler updateHandler) =>
+            //{
+            //    var update = await context.Request.ReadFromJsonAsync<Update>();
+            //    if (update is not null)
+            //    {
+            //        await updateHandler.HandleUpdateAsync(botClient, update, CancellationToken.None);
+            //    }
+            //});
+            //app.Run();
             host.Run();
         }
 

@@ -41,5 +41,7 @@
     <Folder Include="Download Data\" />
     <Folder Include="Data\" />
     <Folder Include="logs\" />
+    <Folder Include="certs\" />
+    <Folder Include="postgres-data\" />
   </ItemGroup>
 </Project>
