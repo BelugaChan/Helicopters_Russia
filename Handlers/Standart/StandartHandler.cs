@@ -1,4 +1,5 @@
-﻿using AbstractionsAndModels.Interfaces.Factory;
+﻿using AbstractionsAndModels.Abstract;
+using AbstractionsAndModels.Interfaces.Factory;
 using AbstractionsAndModels.Interfaces.Handlers.ENS;
 using AbstractionsAndModels.Interfaces.Handlers.GOST;
 using AbstractionsAndModels.Interfaces.Handlers.Standart;
@@ -16,8 +17,8 @@ namespace Algo.Handlers.Standart
         private IGostRemove gostRemove;
         private IGostHandle gostHandle;
         private IUpdatedEntityFactoryStandart<TStandart> updatedEntityFactoryStandart;
-        private IProgressStrategy progressStrategy;
-        public StandartHandler(IENSHandler eNSHandler,IGostRemove gostRemove,IUpdatedEntityFactoryStandart<TStandart> updatedEntityFactoryStandart, IGostHandle gostHandle, IProgressStrategy progressStrategy)
+        private ProgressStrategy progressStrategy;
+        public StandartHandler(IENSHandler eNSHandler,IGostRemove gostRemove,IUpdatedEntityFactoryStandart<TStandart> updatedEntityFactoryStandart, IGostHandle gostHandle, ProgressStrategy progressStrategy)
         {
             this.eNSHandler = eNSHandler;
             this.gostRemove = gostRemove;

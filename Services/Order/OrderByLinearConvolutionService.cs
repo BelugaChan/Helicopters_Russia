@@ -1,4 +1,5 @@
 ﻿using AbstractionsAndModels.Abstract;
+using Algo.Comparers;
 using System.Collections.Concurrent;
 
 namespace Algo.Services.Order
@@ -23,11 +24,16 @@ namespace Algo.Services.Order
                 var linearCoeff = 0.3 * standart.Value.Item1 + 0.7 * normalizedCommonEl;
                 normalizedCommonEls.TryAdd(standart.Key, (linearCoeff, standart.Value.Item2));
             }
-            return normalizedCommonEls
+            //var comparer = new StandartsComparer<TStandart>((x,y) => x Name==y.Name,s => s.Name.GetHashCode());
+
+
+            var res = normalizedCommonEls
                     .OrderByDescending(t => t.Value.Item1)
                     .ThenByDescending(t => t.Value.Item2)
                     .Take(3)
                     .ToDictionary(t => t.Key, t => t.Value);
+            return res;
+            //return ProcessOrderedStandartsBestOfTheBest(res, (cur, bestOfTheBest) => bestOfTheBest.Item1 - Math.Round(cur.Item1, 4) > 0.07);
         }
 
         public override Dictionary<TStandart, (double, double)> GetBestStandarts<TStandart>(ConcurrentDictionary<TStandart, (double, double, double)> bestStandart)

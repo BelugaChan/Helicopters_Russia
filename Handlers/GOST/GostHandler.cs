@@ -69,12 +69,6 @@ namespace Algo.Handlers.Garbage
         }
 
         public string RemoveLettersAndOtherSymbolsFromGost(string gost)
-        {
-            if (!string.IsNullOrEmpty(gost))
-            {
-                return Regex.Replace(gost, @"[\p{L}/\s]", "");
-            }
-            return "";/*gosts.Select(item => Regex.Replace(item, @"[\p{L}.\-/\s]", "")).Where(cleaned => cleaned.Length > 0).ToArray();*/
-        }
+            => !string.IsNullOrEmpty(gost) ? Regex.Replace(gost, @"[\p{L}/\s]", "") : string.Empty;
     }
 }

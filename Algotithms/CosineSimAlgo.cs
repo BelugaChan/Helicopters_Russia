@@ -16,7 +16,7 @@ namespace Algo.Algotithms
     {
         private const double epsilon = 1e-9;
         private IENSHandler eNSHandler;
-        private IProgressStrategy progressStrategy;
+        private ProgressStrategy progressStrategy;
 
         private ENSHandlerRegistry handlerRegistry;
         private OrderService orderService;
@@ -24,7 +24,7 @@ namespace Algo.Algotithms
         private CosineSimpled cosineSimpled;
         public CosineSimAlgo
             (IENSHandler eNSHandler, 
-            IProgressStrategy progressStrategy,
+            ProgressStrategy progressStrategy,
             ENSHandlerRegistry handlerRegistry,
             OrderService orderService,
             /*Cosine cosine*/CosineSimpled cosineSimpled)
@@ -169,6 +169,8 @@ namespace Algo.Algotithms
             ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag, 
             ConcurrentDictionary<TGarbageData,(Dictionary<TStandart, double>,string)> midBag, 
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
+            where TStandart : IStandart
+            where TGarbageData : IGarbageData
         {
             Parallel.ForEach(dataForPostProcessing, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (item, state) =>
             {

@@ -13,7 +13,7 @@ namespace Algo.Services.Order
                 .ThenByDescending(t => t.Value.Item2)
                 .Take(3).ToList();
 
-            return ProcessOrderedStandarts(orderedStandarts, (current, next) => Math.Abs(Math.Round(next.Item1, 4) - Math.Round(current.Item1, 4)) > 0.25);
+            return ProcessOrderedStandartsNeighbors(orderedStandarts, (current, next) => Math.Abs(Math.Round(next.Item1, 4) - Math.Round(current.Item1, 4)) > 0.25);
         }
 
         /// <summary>
