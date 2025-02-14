@@ -10,7 +10,6 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Helicopters_Russia.Services
 {
@@ -156,7 +155,7 @@ namespace Helicopters_Russia.Services
             return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
         }
 
-        async Task<Message> FileIsTooBig(Message msg, Update update, Exception ex) // Обработка ошибки отправки того же файла
+        async Task<Message> FileIsTooBig(Message msg, Update update, Exception ex) // Обработка ошибки отправки файла весом более 20 МБ
         {
             Log.Information($"The user tried to upload a file that was too large. User: \"{update.Message.From}\" Error:\n \"{ex}\".");
 
@@ -181,7 +180,7 @@ namespace Helicopters_Russia.Services
             return await botClient.SendMessage(msg.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
         }
 
-        async Task<Message> NotAnExcelFileSent(Message msg, Update update) // Обработка ошибки отправки того же файла
+        async Task<Message> NotAnExcelFileSent(Message msg, Update update) // Обработка ошибки отправки не Excel файла
         {
             Log.Information($"The user did not send an Excel file. User: \"{update.Message.From}\" File type: \"{update.Message.Document.MimeType}\".");
 
