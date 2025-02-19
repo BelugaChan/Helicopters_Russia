@@ -9,32 +9,40 @@ namespace Algo.Factory
     {
         public Standart CreateFromRow(IRow row)
         {
-            if (row.GetCell(1) is null
-                || row.GetCell(4) is null
-                || row.GetCell(1).CellType == CellType.Blank
-                || row.GetCell(4).CellType == CellType.Blank)
+            var cellValues = new string[4];
+            for (int i = 0; i < 4; i++)
             {
-                Log.Error("Отсутствие необходимых атрибутов в строке с эталонами (наименование/классификатор ЕНС). Строка будет пропущена.");
+                cellValues[i] = row.GetCell(i+1)?.ToString() ?? string.Empty;
+            }
+
+            bool isCell0Empty = string.IsNullOrWhiteSpace(cellValues[0]);
+            bool isCell3Empty = string.IsNullOrWhiteSpace(cellValues[3]);
+
+            if (isCell0Empty || isCell3Empty)
+            {
+                if (isCell3Empty && !isCell0Empty)
+                {
+                    Log.Error($"Отсутствие необходимых атрибутов в строке с эталонами (наименование/классификатор ЕНС). Строка будет пропущена. \nНаименование грязной позиции: {cellValues[1]}");
+                }               
                 return null;
             }
             return new Standart
-            {
-                
+            {   
                 Id = Guid.NewGuid(),
-                Code = row.GetCell(0).ToString() ?? string.Empty,
-                Name = row.GetCell(1).ToString(),
-                NTD = row.GetCell(2).ToString() ?? string.Empty,
-                MaterialNTD = row.GetCell(3).ToString() ?? string.Empty,
-                ENSClassification = row.GetCell(4).ToString()
+                //Code = cellValues[0],
+                Name = cellValues[0],
+                NTD = cellValues[1],
+                MaterialNTD = cellValues[2],
+                ENSClassification = cellValues[3]
             };
         }
 
-        public Standart CreateUpdatedEntity(Guid id,string code, string name, string ntd, string materialNTD, string ensClassification)
+        public Standart CreateUpdatedEntity(Guid id,/*string code,*/ string name, string ntd, string materialNTD, string ensClassification)
         {
             return new Standart 
             {
                 Id = id,
-                Code = code, 
+                //Code = code, 
                 Name = name,
                 NTD = ntd,
                 MaterialNTD = materialNTD,

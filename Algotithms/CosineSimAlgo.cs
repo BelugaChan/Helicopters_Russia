@@ -2,11 +2,9 @@
 using AbstractionsAndModels.Facade;
 using AbstractionsAndModels.Interfaces.Handlers.ENS;
 using AbstractionsAndModels.Interfaces.Models;
-using AbstractionsAndModels.Interfaces.ProgressStrategy;
 using AbstractionsAndModels.Models;
 using Algo.Registry;
 using Algo.Simpled;
-using F23.StringSimilarity;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 
@@ -37,13 +35,13 @@ namespace Algo.Algotithms
             this.cosineSimpled = cosineSimpled;
         }
         //основной алгоритм в данном классе
-        public override (Dictionary<(TGarbageData, TStandart), double> worst, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
+        public override (List<TGarbageData> worst, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)> mid, Dictionary<TGarbageData, Dictionary<TStandart, double>> best) CalculateCoefficent<TStandart, TGarbageData>(AlgoResult<TStandart, TGarbageData> algoResult)
         {
             currentProgress = 0;
 
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing = new();
 
-            ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag = new();
+            ConcurrentBag<TGarbageData> worstBag = new();
             ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>, string)> midBag = new();
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag = new();
 
@@ -52,7 +50,7 @@ namespace Algo.Algotithms
             var unmatchedGarbageData = algoResult.UnmatchedGarbageData;//грязные позиции без сопоставления
 
             //первый прогон алгоритма для сопоставленных грязных позиций
-            MainRun(matchedData, dataForPostProcessing, midBag, bestBag);
+            MainRun(matchedData, dataForPostProcessing, worstBag, midBag, bestBag);
             currentProgress = 0;
 
             //добавляем в коллекцию грязных данных для дефолтного прогона позиции, для которых не было сопоставлено ни одной группы из эталонов.
@@ -93,6 +91,7 @@ namespace Algo.Algotithms
         public void MainRun<TStandart, TGarbageData>
             (ConcurrentBag<MatchedResult<TStandart, TGarbageData>> matchedData,
             ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing,
+            ConcurrentBag<TGarbageData> worstBag,
             ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>, string)> midBag,
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
             where TStandart : IStandart
@@ -149,8 +148,10 @@ namespace Algo.Algotithms
                 }
                 var bestOfOrderedStandarts = orderService.GetBestStandarts(bestStandart);//отсортированные стандарты.Сначала по коэффициенту сопоставления, потом по количеству общих чисел из ГОСТов (у позиции с двумя общими ГОСТами приоритет будет выше, чем у позиции с одним общим ГОСТом, если коэффициент сопоставления с этими эталонами идентичен)
 
+                if (similarityCoeff < 0.05)
+                    worstBag.Add(garbageDataItem);
                 //в итоговый словарь добавляем только лучшее сопоставление из всех предложенных групп (может быть изменено. К примеру, брать лучшие позиции для каждой из групп)
-                if (similarityCoeff < 0.1) //данным грязным позициям даётся второй шанс на дефолтном прогоне
+                else if (similarityCoeff < 0.1) //данным грязным позициям даётся второй шанс на дефолтном прогоне
                     dataForPostProcessing.Add((garbageDataItem, improvedProcessedGarbageName, garbageDataGosts));
                 else if (/*similarityCoeff < 1 ||*/ bestOfOrderedStandarts.FirstOrDefault().Value.Item1 < 1)
                     midBag.TryAdd(garbageDataItem, (DictionaryConverter(bestOfOrderedStandarts), string.Empty)); 
@@ -166,7 +167,7 @@ namespace Algo.Algotithms
         public void DefaultRun<TStandart,TGarbageData>
             (ConcurrentBag<(TGarbageData, string, HashSet<string>)> dataForPostProcessing, 
             ConcurrentDictionary<TStandart, string> allProcessedStandarts,
-            ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag, 
+            ConcurrentBag<TGarbageData> worstBag, 
             ConcurrentDictionary<TGarbageData,(Dictionary<TStandart, double>,string)> midBag, 
             ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
             where TStandart : IStandart
@@ -188,6 +189,15 @@ namespace Algo.Algotithms
                     else if (coeff - similarityCoeff < 0.2)
                         bestStandart.TryAdd(standart, coeff);
                 }
+
+                LogProgress(10, dataForPostProcessing.Count, ref currentProgress, "4. Дополнительный прогон алгоритма Cosine");
+
+                if (similarityCoeff < 0.3)
+                {
+                    worstBag.Add(garbageDataItem);
+                    return;
+                }
+                    
                 var bestOfOrderedStandarts = orderService.GetBestStandarts(bestStandart);
 
                 if ((gosts.Count == 0 || gosts.All(t => t.Length == 0)) && similarityCoeff > 0.05)//если у позиции отсутствует ГОСТ, то она переносится в коллекцию требует уточнения
@@ -195,15 +205,11 @@ namespace Algo.Algotithms
                 else
                 {
                     var orderedStandart = bestOfOrderedStandarts.FirstOrDefault();
-                    if (similarityCoeff < 0.1)
-                        worstBag.TryAdd((garbageDataItem, orderedStandart.Key), Math.Round(orderedStandart.Value, 3));
-                    else if (Math.Abs(similarityCoeff - 1) < epsilon)
+                    if (Math.Abs(similarityCoeff - 1) < epsilon)
                         AddToBestBag(bestBag, garbageDataItem, bestOfOrderedStandarts);
                     else if (similarityCoeff < 1)
-                        midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, "Прогон по умолчанию. Для позиции с грязными данными не найден соответствующий ГОСТ в эталонах"));
-                    
-                }
-                LogProgress(10, dataForPostProcessing.Count,ref currentProgress, "4. Дополнительный прогон алгоритма Cosine");
+                        midBag.TryAdd(garbageDataItem, (bestOfOrderedStandarts, "Прогон по умолчанию. Для позиции с грязными данными не найден соответствующий ГОСТ в эталонах"));       
+                }                
             });
         }
 
@@ -255,17 +261,17 @@ namespace Algo.Algotithms
             currentProgress = Interlocked.Increment(ref currentProgress);
         }
 
-        public (Dictionary<(TGarbageData, TStandart), double>, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)>, Dictionary<TGarbageData, Dictionary<TStandart, double>>) TransferData<TStandart,TGarbageData>
-            (ConcurrentDictionary<(TGarbageData, TStandart), double> worstBag, ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>,string)> midBag, ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
+        public (List<TGarbageData>, Dictionary<TGarbageData, (Dictionary<TStandart, double>, string)>, Dictionary<TGarbageData, Dictionary<TStandart, double>>) TransferData<TStandart,TGarbageData>
+            (ConcurrentBag<TGarbageData> worstBag, ConcurrentDictionary<TGarbageData, (Dictionary<TStandart, double>,string)> midBag, ConcurrentDictionary<TGarbageData, Dictionary<TStandart, double>> bestBag)
         {
-            Dictionary<(TGarbageData, TStandart), double> worst = new();
+            List<TGarbageData> worst = new();
             Dictionary<TGarbageData, (Dictionary<TStandart, double>,string)> mid = new();
             Dictionary<TGarbageData, Dictionary<TStandart, double>> best = new();
 
             //перенос данных из потокобезопасных коллекций в обычные
-            foreach (var ((item, standart), bestValue) in worstBag)
+            foreach (var item in worstBag)
             {
-                worst.Add((item, standart), bestValue);
+                worst.Add(item);
             }
             foreach (var (item, standart) in midBag)
             {

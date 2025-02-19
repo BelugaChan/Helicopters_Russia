@@ -27,23 +27,24 @@ namespace Algo.Handlers.Standart
             this.progressStrategy = progressStrategy;
         }
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>> GroupingStandartsByENS(ConcurrentDictionary<TStandart, string> standarts) //new feature
+        public ConcurrentDictionary<string, Dictionary<TStandart, string>> GroupingStandartsByENS(ConcurrentDictionary<TStandart, string> standarts) //new feature
         {
             var res = standarts.GroupBy(e => e.Key.ENSClassification)
-                .ToDictionary(group => group.Key, group => 
-                new ConcurrentDictionary<TStandart, string>(group.ToDictionary(e => e.Key, e => e.Value)));
-            return new ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>(res);
+                .ToDictionary(
+                group => group.Key, 
+                group => group.ToDictionary(e => e.Key, e => e.Value));
+            return new ConcurrentDictionary<string, Dictionary<TStandart, string>>(res);
         }
 
         public ConcurrentDictionary<TStandart, string> HandleStandartNames(HashSet<TStandart> standarts)
         {
             var fixedStandarts = new ConcurrentDictionary<TStandart, string>();
-            int currentProgress = 0;           
+            int currentProgress = 0;
             int total = standarts.Count;
 
-            Parallel.For(0, total, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, i =>
+            Parallel.ForEach(standarts, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, (standartItem, state) =>
             {
-                var standartItem = standarts.ElementAt(i);
+                //var standartItem = standarts.ElementAt(i);
                 //удаление гостов из эталона
                 var gosts = new[] { standartItem.MaterialNTD, standartItem.NTD }
                     .Where(item => !string.IsNullOrEmpty(item))
@@ -60,7 +61,7 @@ namespace Algo.Handlers.Standart
                 var updatedStandart = updatedEntityFactoryStandart.CreateUpdatedEntity
                 (
                     standartItem.Id,
-                    standartItem.Code,
+                    //standartItem.Code,
                     standartItem.Name,
                     (gosts.Length > 1) ? gosts[1] : "",
                     (gosts.Length > 0) ? gosts[0] : "",
@@ -78,19 +79,19 @@ namespace Algo.Handlers.Standart
             return fixedStandarts;
         }
 
-        public ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>> FindStandartsWhichComparesWithGosts(HashSet<string> gosts, ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>> standarts)
+        public ConcurrentDictionary<string, Dictionary<TStandart, string>> FindStandartsWhichComparesWithGosts(HashSet<string> gosts, ConcurrentDictionary<string, Dictionary<TStandart, string>> standarts)
         {
             var filteredData = standarts
                 .Where(category => category.Value
                     .Any(subCategory => gosts
                         .Any(gostItem => subCategory.Key.NTD.Contains(gostItem) || subCategory.Key.MaterialNTD.Contains(gostItem))));
 
-            return new ConcurrentDictionary<string, ConcurrentDictionary<TStandart, string>>(filteredData);
+            return new ConcurrentDictionary<string, Dictionary<TStandart, string>>(filteredData);
         }
 
         private void UpdateProgress(int current, int total)
         {
-            if (current % 100 == 0)
+            if (current % 200 == 0)
             {
                 progressStrategy.UpdateProgress(new Progress
                 {
@@ -100,5 +101,6 @@ namespace Algo.Handlers.Standart
                 progressStrategy.LogProgress();
             }
         }
+
     }
 }
