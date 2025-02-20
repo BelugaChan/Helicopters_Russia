@@ -2,8 +2,10 @@
 {
     public enum UserState
     {
+        NewUser,
         Idle,
         WaitingForDirtyData,
-        WaitingForCleanData
+        WaitingForCleanData,
+        WorkInProgress
     }
 }

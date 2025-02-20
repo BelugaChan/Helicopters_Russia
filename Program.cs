@@ -35,6 +35,13 @@ namespace Helicopters_Russia
     {
         public static void Main(string[] args)
         {
+            // Создание и очистка папок для скаченных файлов при запуске бота
+            string downloadDataPath = "Download Data";
+            string dataPath = "Data";
+
+            EnsureDirectoryAndCleanFiles(downloadDataPath);
+            EnsureDirectoryAndCleanFiles(dataPath);
+
             var builder = /*WebApplication.CreateBuilder(args);*/Host.CreateApplicationBuilder(args);
 
             builder.Configuration.AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
@@ -106,9 +113,6 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<ISimilarityCalculator, CosineSimAlgo>();
             builder.Services.AddSingleton<AlgoFacade<Standart, GarbageData>>();
 
-
-
-
             //builder.Services.AddSingleton<FileProcessingService>();
 
             var host/*app*/ = builder.Build();
@@ -123,6 +127,29 @@ namespace Helicopters_Russia
             //});
             //app.Run();
             host.Run();
+        }
+
+        public static void EnsureDirectoryAndCleanFiles(string directoryPath)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                var files = Directory.GetFiles(directoryPath);
+
+                if (files.Length > 0)
+                {
+                    Parallel.ForEach(files, (file, _) =>
+                    {
+                        System.IO.File.Delete(file); // Удаляем файлы в нескольких потоках
+                    });
+
+                    Log.Information($"In the \"{Path.GetFileName(directoryPath)}\" folder, unused files were deleted.");
+                }
+            }
+            else
+            {
+                Directory.CreateDirectory(directoryPath);
+                Log.Information($"The folder \"{Path.GetFileName(directoryPath)}\" was created.");
+            }
         }
 
         private static ENSHandlerRegistry CreateENSHandlerRegistry(IServiceProvider provider)
