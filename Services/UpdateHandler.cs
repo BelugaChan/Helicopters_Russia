@@ -51,6 +51,7 @@ namespace Helicopters_Russia.Services
             }
         }
 
+        // Метод обработки текста
         private async Task TextMessage(Update update, CancellationToken cancellationToken)
         {
             await (update.Message!.Text switch
@@ -68,6 +69,7 @@ namespace Helicopters_Russia.Services
             });
         }
 
+        // Метод обработки команд (не закончен, нуждается в доработке (готовы - /start, "📂 Начать обработку файлов", "✅ Все файлы отправлены" (кроме WaitingForCleanData))
         private async Task CommandProccessing(Update update, CancellationToken cancellationToken)
         {
             long userId = update.Message!.From!.Id;
