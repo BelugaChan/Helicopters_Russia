@@ -3,6 +3,7 @@ using ExcelHandler.Interfaces;
 using ExcelHandler.Mergers;
 using Helicopters_Russia.Models;
 using NPOI.HPSF;
+using Org.BouncyCastle.Bcpg;
 using Serilog;
 using Serilog.Context;
 using System.Collections.Concurrent;
@@ -31,10 +32,11 @@ namespace Helicopters_Russia.Services
         // Основной обработчик бота, в целом закончен
         public async Task HandleUpdateAsync(ITelegramBotClient botClient, Update update, CancellationToken cancellationToken)
         {
-            if (!_userStates.ContainsKey(update.Message!.From!.Id)) // Для нового пользователя (в том числе после перезапуска бота) ставим состояние "ожидание"
+            long userId = update.Message!.From!.Id;
+            if (!_userStates.ContainsKey(userId)) // Для нового пользователя (в том числе после перезапуска бота) ставим состояние "ожидание"
             {
-                Log.Information($"New user: \"{update.Message.From.ToString()}\"");
-                _userStates[update.Message.From.Id] = UserState.NewUser;
+                _userStates[userId] = UserState.NewUser;
+                Log.Information($"Новый пользователь: \"{update.Message.From}\". Присвоен статус: \"{_userStates[userId]}\".");
             }
 
             //_userDirtyFiles[update.Message!.From!.Id] = new List<string> { "dirtyFile" };
@@ -49,6 +51,7 @@ namespace Helicopters_Russia.Services
                 });
 
             }
+            Log.Information("");
         }
 
         // Метод обработки текста
@@ -75,6 +78,7 @@ namespace Helicopters_Russia.Services
             long userId = update.Message!.From!.Id;
             string command = update.Message!.Text!;
             string messageText = update.Message!.Text!;
+            Log.Information($"Пользователь \"{update.Message.From} - {_userStates[userId]}\" отправил команду: \"{command}\", вызван метод: \"CommandProccessing\".");
 
             if (command == "/start")
             {
@@ -84,6 +88,7 @@ namespace Helicopters_Russia.Services
 
                     const string usage = "Приветствуем Вас в Telegram боте для нормализации нормативно-справочной информации!";
                     await botClient.SendMessage(update.Message.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+                    Log.Information($"У пользователя \"{update.Message.From} - NewUser\" в методе \"CommandProccessing\" изменен статус на \"{_userStates[userId]}\". Отправлена обратная связь.");
                 }
 
                 await KeyboardCommandsInChat(update);
@@ -93,16 +98,21 @@ namespace Helicopters_Russia.Services
             {
                 if (_userStates[userId] == UserState.Idle || _userStates[userId] == UserState.NewUser) // Пользователь первый раз нажимает "📂 Начать обработку файлов"
                 {
+                    Log.Information($"В методе \"CommandProcessing\" изменен статус пользователя \"{update.Message.From} - {_userStates[userId]}\" на \"WaitingForDirtyData\", после чего пользователь был перенаправлен в этот же метод.");
+
                     _userStates[userId] = UserState.WaitingForDirtyData;
                     await CommandProccessing(update, cancellationToken);
                 }
                 else if (_userStates[userId] == UserState.WorkInProgress)
                 {
+                    Log.Information($"Пользователь \"{update.Message.From} - {_userStates[userId]}\" отправил команду \"{command}\" во время работы алгоритма сопоставления. Отправлена обратная связь.");
+
                     const string usage = "Пожалуйста, дождитесь завершения сопоставления";
                     await botClient.SendMessage(update.Message.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
                 }
                 else
                 {
+                    Log.Information($"Пользователь \"{update.Message.From} - {_userStates[userId]}\" отправил команду \"{command}\", после чего был перенаправлен в метод: \"KeyboardCommandsInChat\".");
                     await KeyboardCommandsInChat(update);
                 }
             }
@@ -111,6 +121,7 @@ namespace Helicopters_Russia.Services
             {
                 if (_userStates[userId] == UserState.WaitingForDirtyData && _userDirtyFiles.TryGetValue(userId, out var dirtyFiles) && dirtyFiles.Any())
                 {
+                    Log.Information($"В методе \"CommandProcessing\" изменен статус пользователя \"{update.Message.From} - {_userStates[userId]}\" на \"WaitingForCleanData\", после чего пользователь был перенаправлен в метод: \"KeyboardCommandsInChat\".");
                     _userStates[userId] = UserState.WaitingForCleanData;
                     await KeyboardCommandsInChat(update);
                 }
