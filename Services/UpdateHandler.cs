@@ -8,6 +8,7 @@ using Serilog;
 using Serilog.Context;
 using System.Collections.Concurrent;
 using System.Reflection.Metadata.Ecma335;
+using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading;
 using Telegram.Bot;
@@ -137,8 +138,8 @@ namespace Helicopters_Russia.Services
                     }
                     try
                     {
-                        await MergeFilesAsync(dirtyResultFileName, cleanResultFileName, update); // Объединение и сохранение
-                        
+                        await MergeFilesAsync(dirtyResultFileName, _userCleanFiles, update); // Объединение и сохранение
+                        await MergeFilesAsync(cleanResultFileName, _userDirtyFiles, update);
                         // Запускаем алгоритм
                         try
                         {
@@ -211,6 +212,83 @@ namespace Helicopters_Russia.Services
                         return;
                     }
                 }
+                //надстройка над существующим кодом (обработка этаонов и добавление их в БД). Тестируется...
+                else if(_userStates[userId] == UserState.DbPush && _userCleanFiles.TryGetValue(userId, out var cleanFiles2) && cleanFiles2.Any())
+                {
+                    var cleanResultFileName = userId + "_cleanFile.xlsx";
+
+                    try
+                    {
+                        await MergeFilesAsync(cleanResultFileName, _userCleanFiles, update);
+                        // Запускаем алгоритм
+                        try
+                        {
+                            // Указываем пути к объединенным файлам
+                            var cleanFilePath = Path.Combine(dataPath, cleanResultFileName);
+
+                            // Проверка существования файлов
+                            if (!System.IO.File.Exists(cleanFilePath))
+                            {
+                                const string usage = "Не удалось найти загруженные файлы для обработки.";
+                                await botClient.SendMessage(update.Message.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+                                return;
+                            }
+                            // Установка путей файлов в сервис обработки
+                            fileProcessingService.SaveCleanFilePath(cleanFilePath);
+
+                            _userStates[userId] = UserState.WorkInProgress;
+
+                            // Запуск обработки файлов
+                            var resultFilePath = string.Empty;
+
+                            await fileProcessingService.ProcessStandartsAsync();
+
+                            //Log.Information($"Files have been processed, sending the result to the user \"{callbackQuery.From}\".");
+                            //logger.LogInformation($"Files have been processed, sending the result to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
+
+                            // Проверка размера файла и выбор способа отправки
+                            var fileInfo = !string.IsNullOrEmpty(resultFilePath) ? new FileInfo(resultFilePath) : throw new ArgumentException($"{resultFilePath} не должен быть пустым. Метод ProcessFilesAsync отработал некорректно.");
+                            if (fileInfo.Length > 49 * 1024 * 1024)
+                            {
+                                // Если файл слишком большой, разбить и отправить по частям
+                                await SplitAndSendLargeFileAsync(resultFilePath, userId, cancellationToken);
+                            }
+                            else
+                            {
+                                // Отправить файл целиком
+                                await using var resultStream = System.IO.File.OpenRead(resultFilePath);
+                                var inputFile = new InputFileStream(resultStream, "Result.xlsx");
+                                await botClient.SendDocument(userId, inputFile, cancellationToken: cancellationToken);
+                            }
+
+                            // Очистка состояния и сброс данных для следующей операции
+                            _userStates[userId] = UserState.Idle;
+
+                            // Удаляем временные файл после обработки
+                            System.IO.File.Delete(cleanFilePath);
+                            System.IO.File.Delete(resultFilePath);
+
+                            //Log.Information($"Result file has been sent to the user \"{callbackQuery.From}\".");
+                            //logger.LogInformation($"Result file has been sent to the user \"{callbackQuery.From}\", time: {DateTimeOffset.Now}\n");
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error($"Error while processing files: {ex.Message}");
+                            //logger.LogError($"Error while processing files: {ex.Message}, time: {DateTimeOffset.Now}\n");
+                            await botClient.SendMessage(
+                                userId,
+                                "Произошла ошибка при обработке файлов. Пожалуйста, попробуйте снова.",
+                                cancellationToken: cancellationToken
+                            );
+                        }
+                    }
+                    catch
+                    {
+                        const string usage = "Что-то не так";
+                        await botClient.SendMessage(update.Message.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+                        return;
+                    }
+                }
                 else
                 {
                     const string usage = "Что-то не так";
@@ -219,8 +297,28 @@ namespace Helicopters_Russia.Services
                 }
             }
 
+            //beta 
             else if (command == "☁️ Загрузить эталоны в базу данных") // БД
             {
+                if (_userStates[userId] == UserState.Idle || _userStates[userId] == UserState.NewUser) // Пользователь первый раз нажимает "☁️ Загрузить эталоны в базу данных"
+                {
+                    Log.Information($"В методе \"CommandProcessing\" изменен статус пользователя \"{update.Message.From} - {_userStates[userId]}\" на \"DbPush\", после чего пользователь был перенаправлен в этот же метод.");
+
+                    _userStates[userId] = UserState.DbPush;
+                    await CommandProccessing(update, cancellationToken);
+                }
+                else if (_userStates[userId] == UserState.WorkInProgress)
+                {
+                    Log.Information($"Пользователь \"{update.Message.From} - {_userStates[userId]}\" отправил команду \"{command}\" во время обработки и загрузки эталонов в БД. Отправлена обратная связь.");
+
+                    const string usage = "Пожалуйста, дождитесь завершения обработки и загрузки эталонов в БД";
+                    await botClient.SendMessage(update.Message.Chat, usage, parseMode: ParseMode.Html, replyMarkup: new ReplyKeyboardRemove());
+                }
+                else
+                {
+                    Log.Information($"Пользователь \"{update.Message.From} - {_userStates[userId]}\" отправил команду \"{command}\", после чего был перенаправлен в метод: \"KeyboardCommandsInChat\".");
+                    await KeyboardCommandsInChat(update);
+                }
 
             }
         }
@@ -300,6 +398,34 @@ namespace Helicopters_Russia.Services
 
 
                 //сделать для других состояний
+                //прим.b3luga: так как на данный момент новый код тестируется, будет создана надстройка, которая дублирует рабочий код.
+
+                UserState.DbPush when _userCleanFiles.TryGetValue(update.Message!.From!.Id, out var cleanFiles) && cleanFiles.Any() => botClient.SendMessage(
+                    chatId: update.Message.Chat,
+                    text: "Пожалуйста, отправьте еще \"чистые\" данные, если требуется.\nИли нажмите кнопку \"✅ Все файлы отправлены\". ",
+                    replyMarkup: new ReplyKeyboardMarkup(new[]
+                    {
+                                        new KeyboardButton[] { "✅ Все файлы отправлены",  "ℹ Информация о формате отправляемых файлов"},
+                                        new KeyboardButton[] { "❌ Отправлен неверный файл", "❌ Отмена" }
+                    })
+                    {
+                        ResizeKeyboard = true,
+                        OneTimeKeyboard = true,
+                        InputFieldPlaceholder = "Выберите действие или отправьте документ"
+                    }),
+                // Пользователь не отправлял "чистые" файлы
+                UserState.DbPush when !_userCleanFiles.ContainsKey(update.Message!.From!.Id) || (_userCleanFiles.TryGetValue(update.Message!.From!.Id, out var cleanFiles) && !cleanFiles.Any()) => botClient.SendMessage(
+                    chatId: update.Message.Chat,
+                    text: "Пожалуйста, отправьте \"чистые\" данные.",
+                    replyMarkup: new ReplyKeyboardMarkup(new[]
+                    {
+                        new KeyboardButton[] { "ℹ Информация о формате отправляемых файлов", "❌ Отмена"}
+                    })
+                    {
+                        ResizeKeyboard = true,
+                        OneTimeKeyboard = true,
+                        InputFieldPlaceholder = "Выберите действие или отправьте документ"
+                    }),
             };
 
             await task;
@@ -325,6 +451,12 @@ namespace Helicopters_Russia.Services
                         "\nЛибо, если больше не требуется отправлять \"грязные\" данные, нажмите кнопку \"✅ Все файлы отправлены\"");
                     return;
                 case UserState.WaitingForCleanData:
+                    await ProcessFile(update, _userCleanFiles, "clean", cancellationToken,
+                        "Пожалуйста, убедитесь, что Вы не отправляете файл, который уже отправляли и поменяйте название." +
+                        "\nЛибо, если больше не требуется отправлять \"чистые\" данные, нажмите кнопку \"✅ Все файлы отправлены\"");
+                    return;
+                    //надстройка
+                case UserState.DbPush:
                     await ProcessFile(update, _userCleanFiles, "clean", cancellationToken,
                         "Пожалуйста, убедитесь, что Вы не отправляете файл, который уже отправляли и поменяйте название." +
                         "\nЛибо, если больше не требуется отправлять \"чистые\" данные, нажмите кнопку \"✅ Все файлы отправлены\"");
@@ -404,7 +536,7 @@ namespace Helicopters_Russia.Services
         }
 
         // Метод для объединения файлов (в целом закончен, добавить логи)
-        private async Task MergeFilesAsync(string dirtyResultFileName, string cleanResultFileName, Update update) 
+        private async Task MergeFilesAsync(string resulFileName, ConcurrentDictionary<long, ConcurrentBag<(string FileId, string FileName)>> files, Update update) 
         {
             long userId = update.Message!.From!.Id;
             try
@@ -413,40 +545,25 @@ namespace Helicopters_Russia.Services
                 IExcelMerger excelMerger = new NPOIMerger(); // Здесь можно внедрить через DI, если нужно.
 
                 // Получаем список FileId для грязных файлов пользователя с добавлением .xlsx
-                if (_userDirtyFiles.TryGetValue(userId, out var dirtyFiles) && _userCleanFiles.TryGetValue(userId, out var cleanFiles))
+                if (files.TryGetValue(userId, out var resFiles))
                 {
-                    var dirtyFileIds = dirtyFiles.Select(file => downloadDataPath + "/" + file.FileId + ".xlsx").ToList();
+                    var dirtyFileIds = resFiles.Select(file => downloadDataPath + "/" + file.FileId + ".xlsx").ToList();
                     try
                     {
-                        await excelMerger.MergeExcelFilesAsync(dirtyFileIds, dataPath, dirtyResultFileName);
+                        await excelMerger.MergeExcelFilesAsync(dirtyFileIds, dataPath, resulFileName);
                         foreach (var filePath in dirtyFileIds)
                         {
                             System.IO.File.Delete(filePath);
                         }
-                        _userDirtyFiles[userId] = new ConcurrentBag<(string FileId, string FileName)>();
+                        files[userId] = new ConcurrentBag<(string FileId, string FileName)>();
                     }
                     catch (Exception ex)
                     {
                         Log.Warning(ex.Message);
                     }
-
-                    var cleanFileIds = cleanFiles.Select(file => downloadDataPath + "/" + file.FileId + ".xlsx").ToList();
-                    try
-                    {
-                        await excelMerger.MergeExcelFilesAsync(cleanFileIds, dataPath, cleanResultFileName);
-                        foreach (var filePath in cleanFileIds)
-                        {
-                            System.IO.File.Delete(filePath);
-                        }
-                        _userCleanFiles[userId] = new ConcurrentBag<(string FileId, string FileName)>();
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.Warning(ex.Message);
-                    }
-
+                    
                     // Логирование успешного завершения
-                    Log.Information($"Files have been successfully merged and saved to: \"{dirtyResultFileName}\".");
+                    Log.Information($"Files have been successfully merged and saved to: \"{resulFileName}\".");
                 }
                 else
                 {

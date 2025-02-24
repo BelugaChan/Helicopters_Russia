@@ -1,14 +1,16 @@
-﻿using AbstractionsAndModels.Facade;
-using AbstractionsAndModels.Interfaces.Algorithms;
+﻿using Helicopters_Russia.Facade;
+using Helicopters_Russia.Interfaces.Algorithms;
 using AbstractionsAndModels.Models;
 using Algo.Factory;
 using ExcelHandler.Interfaces;
 using Serilog;
+using AbstractionsAndModels.Interfaces.Models;
 
 public class FileProcessingService(
     ISimilarityCalculator similarityCalculator,
     IExcelReader excelReader,
     IExcelWriter excelWriter,
+    IServiceProvider serviceProvider,
     //ILogger<FileProcessingService> logger,
     AlgoFacade<Standart, GarbageData> algoFacade)
 {
@@ -20,19 +22,49 @@ public class FileProcessingService(
 
     public async Task<string> ProcessFilesAsync(CancellationToken cancellationToken)
     {
-        if (_dirtyFilePath == null || _cleanFilePath == null)
+        if (_dirtyFilePath == null/* || _cleanFilePath == null*/)
         {
-            Log.Error("Both files are required for processing.");
+            Log.Error("Dirty data are required for processing.");
             throw new InvalidOperationException(/*"Both files are required for processing."*/);
         }
         // Обработка файлов алгоритмом Cosine
-        var resultFilePath = await RunProcessingAlgorithm(_dirtyFilePath, _cleanFilePath);
+        var resultFilePath = await RunProcessingAlgorithm(_dirtyFilePath/*, _cleanFilePath*/);
         return resultFilePath;
     }
 
-    private async Task<string> RunProcessingAlgorithm(string dirtyFilePath, string cleanFilePath)
+    public async Task ProcessStandartsAsync()
+    {
+        if (_cleanFilePath == null)
+        {
+            Log.Error("Standarts are required for processing.");
+            throw new InvalidOperationException(/*"Both files are required for processing."*/);
+        }
+        await WriteStandartsToDatabase(_cleanFilePath);
+    }
+
+    private async Task WriteStandartsToDatabase(string cleanFilePath)
     {
         HashSet<Standart> standarts = new();
+        Pullenti.Sdk.InitializeAll();
+        try
+        {
+            await Task.Run(() =>
+            {
+                standarts = excelReader.CreateCollectionFromExcel<Standart, StandartFactory>(cleanFilePath, new StandartFactory());
+                //garbageData = excelReader.CreateCollectionFromExcel<GarbageData, GarbageDataFactory>(dirtyFilePath, new GarbageDataFactory());
+            });
+            await algoFacade.ProcessStandartsAndInsertThemIntoDbAsync(standarts);
+        }
+        catch (Exception ex)
+        {
+            Log.Error($"На этапе обработки и записи эталона в БД возникла ошибка: {ex.Message}");
+        }
+    }
+
+    private async Task<string> RunProcessingAlgorithm(string dirtyFilePath/*, string cleanFilePath*/)
+    {
+
+        //HashSet<Standart> standarts = new();
         HashSet<GarbageData> garbageData = new();
 
         // Создаём путь для сохранения результата
@@ -42,13 +74,13 @@ public class FileProcessingService(
             // Считываем данные из "чистого" и "грязного" файлов
             await Task.Run(() => //выделение отдельного потока для функций CreateCollectionFromExcel. Основной поток может выполнять другие действия, пока не завершится считывание файлов
             {
-                standarts = excelReader.CreateCollectionFromExcel<Standart, StandartFactory>(cleanFilePath, new StandartFactory());//need to merge clean files
+                //standarts = excelReader.CreateCollectionFromExcel<Standart, StandartFactory>(cleanFilePath, new StandartFactory());//need to merge clean files
                 garbageData = excelReader.CreateCollectionFromExcel<GarbageData, GarbageDataFactory>(dirtyFilePath, new GarbageDataFactory());
             });
 
 
             Pullenti.Sdk.InitializeAll();
-            var algoresult = algoFacade.AlgoWrap(standarts, garbageData);
+            var algoresult = await algoFacade.AlgoWrap(/*standarts,*/ garbageData);
             //Console.WriteLine($"matched: {algoresult.MatchedData.Count}");
             //Console.WriteLine($"unmatched: {algoresult.UnmatchedGarbageData.Count}");
             // Вычисляем коэффициенты схожести и разделяем на категории

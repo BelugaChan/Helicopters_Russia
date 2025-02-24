@@ -385,6 +385,9 @@ Configs/
 
 #postgres-data
 postgres-data/
+
+#MigrationsData
+Migrations/
 =======
 logs/
 >>>>>>> parent of 7166ca5 (New log stuff)

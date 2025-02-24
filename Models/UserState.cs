@@ -6,6 +6,7 @@
         Idle,
         WaitingForDirtyData,
         WaitingForCleanData,
+        DbPush,
         WorkInProgress
     }
 }

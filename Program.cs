@@ -1,13 +1,13 @@
 using AbstractionsAndModels.Abstract;
-using AbstractionsAndModels.Facade;
-using AbstractionsAndModels.Interfaces.Algorithms;
+using Helicopters_Russia.Facade;
+using Helicopters_Russia.Interfaces.Algorithms;
 using AbstractionsAndModels.Interfaces.Factory;
 using AbstractionsAndModels.Interfaces.Handlers.ENS;
 using AbstractionsAndModels.Interfaces.Handlers.GOST;
 using AbstractionsAndModels.Interfaces.Handlers.Standart;
 using AbstractionsAndModels.Interfaces.ProgressStrategy;
 using AbstractionsAndModels.Models;
-using Algo.Algotithms;
+using Helicopters_Russia.Algotithms;
 using Algo.Factory;
 using Algo.Handlers.ENS;
 using Algo.Handlers.Garbage;
@@ -28,6 +28,10 @@ using Microsoft.AspNetCore.Builder;
 using Serilog;
 using Serilog.Sinks.Grafana.Loki;
 using Telegram.Bot;
+using Helicopters_Russia.Context;
+using Microsoft.EntityFrameworkCore;
+using Helicopters_Russia.Repository;
+using Helicopters_Russia.Interfaces.Repository;
 
 namespace Helicopters_Russia
 {
@@ -70,6 +74,11 @@ namespace Helicopters_Russia
             var configuration = builder.Configuration;
             builder.Services.Configure<BotConfiguration>(configuration.GetSection("BotConfiguration"));
 
+            //Строка подключения к БД
+            var connectionString = configuration.GetConnectionString("PostgresConnection");
+
+            builder.Services.AddDbContext<MyDbContext<Standart>>(opt => opt.UseNpgsql(connectionString));
+
             // Регистрируем ITelegramBotClient с использованием токена
             var botConfig = configuration.GetSection("BotConfiguration").Get<BotConfiguration>();
             if (string.IsNullOrEmpty(botConfig?.BotToken))
@@ -83,6 +92,8 @@ namespace Helicopters_Russia
             builder.Services.AddSingleton<FileProcessingService>();
             builder.Services.AddSingleton<UpdateHandler>();
             builder.Services.AddHostedService<BotService>();
+
+            builder.Services.AddScoped<IStandartRepository<Standart>, StandartsRepository<Standart>>();
 
             builder.Services.AddSingleton<IExcelReader, NPOIReader>();
             builder.Services.AddSingleton<IExcelWriter, NPOIWriter>();
